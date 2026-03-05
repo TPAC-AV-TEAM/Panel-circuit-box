@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AV系統-A館</title>
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-title" content="AV系統-A館">
+    <meta name="application-name" content="AV系統-A館">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -97,7 +105,7 @@
     <h1 class="main-title">音視訊迴路盒</h1>
 
     <div class="macos-card search-container">
-        <input type="text" id="searchInput" placeholder="輸入編號 (例如: 07-02)" oninput="handleSearch()">
+        <input type="text" id="searchInput" placeholder="輸入編號 (例如: 07-02)" autocomplete="off" oninput="handleSearch()">
         <button class="clear-btn" onclick="clearSearch()">✕</button>
     </div>
 
@@ -135,18 +143,19 @@
 <script>
     let dbData = [];
 
-    // 1. 讀取獨立的 JSON 資料檔
+    // 1. 讀取獨立的 JSON 資料檔 (加入防快取機制)
     async function loadData() {
         try {
-            const response = await fetch('data.json'); 
+            // 加入時間戳記 ?v=... 強制手機每次打開 App 都去抓最新的檔案
+            const response = await fetch('./data.json?v=' + new Date().getTime()); 
             dbData = await response.json();
         } catch (e) {
-            console.error("資料讀取失敗，請確認 data.json 存在:", e);
-            document.getElementById('placeholderText').innerText = "系統故障: 無法讀取資料檔";
+            console.error("資料讀取失敗:", e);
+            document.getElementById('placeholderText').innerText = "系統故障: 無法連線至資料庫";
         }
     }
 
-    // 2. 格式化搜尋 ID (對應 Python 的 search_id 邏輯)
+    // 2. 格式化搜尋 ID
     function formatID(id) {
         if (!id) return "";
         let clean = String(id).toUpperCase().replace(/[\s-]/g, '');
@@ -162,8 +171,6 @@
         }
 
         const query = formatID(inputVal);
-
-        // 找出所有符合該編號的資料列
         const matches = dbData.filter(item => formatID(item['迴路盒編號']) === query);
 
         if (matches.length > 0) {
@@ -180,28 +187,26 @@
         document.getElementById('placeholderText').style.display = 'none';
         
         const first = matches[0];
-        
-        // 顯示原始輸入或格式化後的 ID
         document.getElementById('resID').innerText = first['迴路盒編號'] || query;
         
-        // 實作馬甲系統 (廳別轉換)
+        // 馬甲系統 (廳別轉換)
         let hall = String(first['廳別'] || 'N/A').split('\n')[0].trim();
         if (hall.includes("大劇院")) hall = "GT";
         else if (hall.includes("多形式")) hall = "BB";
         else if (hall.includes("鏡框式")) hall = "GP";
         document.getElementById('resHall').innerText = hall;
         
-        // 顯示位置 (取代換行)
+        // 顯示位置
         let loc = String(first['迴路盒位置'] || 'N/A').replace(/\n/g, ' ');
         document.getElementById('resLoc').innerText = loc;
 
-        // 實作 Pandas groupby(['系統', '接頭', '接頭型式'])['接頭數'].sum()
+        // 彙整接頭數量
         const summaryMap = {};
         matches.forEach(item => {
             const sys = (item['系統'] || '').trim();
             const conn = (item['接頭'] || '').trim();
             const type = (item['接頭型式'] || '').trim();
-            const key = `${sys}|${conn}|${type}`; // 分組的複合鍵
+            const key = `${sys}|${conn}|${type}`; 
             
             const count = parseInt(item['接頭數'], 10) || 0;
             
@@ -211,7 +216,7 @@
             summaryMap[key].count += count;
         });
 
-        // 將彙整後的資料渲染到表格
+        // 渲染表格
         const tbody = document.querySelector('#interfaceTable tbody');
         tbody.innerHTML = '';
         Object.values(summaryMap).forEach(group => {
@@ -236,7 +241,6 @@
         hideResult();
     }
 
-    // 網頁載入時自動讀取資料
     window.onload = loadData;
 </script>
 </body>
