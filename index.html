@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AV系統-A館</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-color: #000000;
+            --card-bg: rgba(30, 30, 32, 0.6);
+            --text-main: #F5F5F7;
+            --text-secondary: #8E8E93;
+            --accent-blue: #0A84FF;
+            --border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: "SF Pro Display", "-apple-system", "Inter", sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container { width: 100%; max-width: 600px; padding-top: 2.5rem; }
+
+        .main-title {
+            font-weight: 700;
+            background: linear-gradient(180deg, #FFFFFF 0%, #8E8E93 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .macos-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 0.5px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .search-container { display: flex; gap: 10px; align-items: center; margin-top: 10px; margin-bottom: 20px; }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px 15px;
+            color: #FFFFFF;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .clear-btn {
+            width: 42px; height: 42px;
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 0.5px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #FFFFFF;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-label { color: var(--accent-blue); font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+        .id-title { font-size: 26px; margin: 0; color: #FFFFFF; }
+        .divider { border: 0.5px solid rgba(255,255,255,0.1); margin: 15px 0; }
+        
+        .info-row { margin-bottom: 15px; }
+        .info-label { color: var(--text-secondary); font-size: 14px; margin-bottom: 4px; }
+        .info-value { font-size: 22px; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; color: var(--text-secondary); padding: 8px; border-bottom: 1px solid var(--border-color); font-size: 14px; }
+        td { padding: 12px 8px; border-bottom: 0.5px solid rgba(255, 255, 255, 0.05); font-size: 15px; }
+
+        .status-text { text-align: center; color: #48484A; font-size: 12px; letter-spacing: 1px; margin-top: 15px; }
+        .footer-text { text-align: center; font-size: 10px; color: #3A3A3C; margin-top: 30px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 class="main-title">音視訊迴路盒</h1>
+
+    <div class="macos-card search-container">
+        <input type="text" id="searchInput" placeholder="輸入編號 (例如: 07-02)" oninput="handleSearch()">
+        <button class="clear-btn" onclick="clearSearch()">✕</button>
+    </div>
+
+    <div id="resultArea" style="display: none;">
+        <div class="macos-card" style="margin-top:-10px;">
+            <p class="metric-label">SYSTEM SCAN OK</p>
+            <h2 id="resID" class="id-title"></h2>
+            <div class="divider"></div>
+            
+            <div class="info-row">
+                <div class="info-label">廳別</div>
+                <div id="resHall" class="info-value"></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">詳細位置</div>
+                <div id="resLoc" class="info-value"></div>
+            </div>
+        </div>
+
+        <div class="macos-card">
+            <p class="info-label">📦 接口清單</p>
+            <table id="interfaceTable">
+                <thead>
+                    <tr><th>系統</th><th>接頭</th><th>數量</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <p id="placeholderText" class="status-text">READY TO SCAN</p>
+    <p class="footer-text">OS 26 TERMINAL</p>
+</div>
+
+<script>
+    let dbData = [];
+
+    // 1. 讀取獨立的 JSON 資料檔
+    async function loadData() {
+        try {
+            const response = await fetch('data.json'); 
+            dbData = await response.json();
+        } catch (e) {
+            console.error("資料讀取失敗，請確認 data.json 存在:", e);
+            document.getElementById('placeholderText').innerText = "系統故障: 無法讀取資料檔";
+        }
+    }
+
+    // 2. 格式化搜尋 ID (對應 Python 的 search_id 邏輯)
+    function formatID(id) {
+        if (!id) return "";
+        let clean = String(id).toUpperCase().replace(/[\s-]/g, '');
+        return clean.startsWith("AV") ? clean : "AV" + clean;
+    }
+
+    // 3. 處理搜尋邏輯
+    function handleSearch() {
+        const inputVal = document.getElementById('searchInput').value.trim();
+        if (!inputVal) {
+            hideResult();
+            return;
+        }
+
+        const query = formatID(inputVal);
+
+        // 找出所有符合該編號的資料列
+        const matches = dbData.filter(item => formatID(item['迴路盒編號']) === query);
+
+        if (matches.length > 0) {
+            showResult(matches, query);
+        } else {
+            hideResult();
+            document.getElementById('placeholderText').innerText = "查無此編號";
+        }
+    }
+
+    // 4. 顯示結果與 GroupBy 邏輯
+    function showResult(matches, query) {
+        document.getElementById('resultArea').style.display = 'block';
+        document.getElementById('placeholderText').style.display = 'none';
+        
+        const first = matches[0];
+        
+        // 顯示原始輸入或格式化後的 ID
+        document.getElementById('resID').innerText = first['迴路盒編號'] || query;
+        
+        // 實作馬甲系統 (廳別轉換)
+        let hall = String(first['廳別'] || 'N/A').split('\n')[0].trim();
+        if (hall.includes("大劇院")) hall = "GT";
+        else if (hall.includes("多形式")) hall = "BB";
+        else if (hall.includes("鏡框式")) hall = "GP";
+        document.getElementById('resHall').innerText = hall;
+        
+        // 顯示位置 (取代換行)
+        let loc = String(first['迴路盒位置'] || 'N/A').replace(/\n/g, ' ');
+        document.getElementById('resLoc').innerText = loc;
+
+        // 實作 Pandas groupby(['系統', '接頭', '接頭型式'])['接頭數'].sum()
+        const summaryMap = {};
+        matches.forEach(item => {
+            const sys = (item['系統'] || '').trim();
+            const conn = (item['接頭'] || '').trim();
+            const type = (item['接頭型式'] || '').trim();
+            const key = `${sys}|${conn}|${type}`; // 分組的複合鍵
+            
+            const count = parseInt(item['接頭數'], 10) || 0;
+            
+            if (!summaryMap[key]) {
+                summaryMap[key] = { sys: sys, conn: conn, count: 0 };
+            }
+            summaryMap[key].count += count;
+        });
+
+        // 將彙整後的資料渲染到表格
+        const tbody = document.querySelector('#interfaceTable tbody');
+        tbody.innerHTML = '';
+        Object.values(summaryMap).forEach(group => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${group.sys}</td>
+                <td>${group.conn}</td>
+                <td>${group.count}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function hideResult() {
+        document.getElementById('resultArea').style.display = 'none';
+        document.getElementById('placeholderText').style.display = 'block';
+        document.getElementById('placeholderText').innerText = "READY TO SCAN";
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        hideResult();
+    }
+
+    // 網頁載入時自動讀取資料
+    window.onload = loadData;
+</script>
+</body>
+</html>
