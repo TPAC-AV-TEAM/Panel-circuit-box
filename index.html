@@ -59,7 +59,7 @@
 
         .search-container { display: flex; gap: 8px; align-items: center; margin-top: 10px; margin-bottom: 20px; }
 
-        input[type="text"], select {
+        input[type="text"] {
             flex: 1;
             background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -69,8 +69,6 @@
             font-size: 16px;
             outline: none;
         }
-
-        select option { background-color: #1c1c1e; color: #fff; }
 
         .icon-btn {
             width: 42px; height: 42px;
@@ -101,8 +99,12 @@
         .status-text { text-align: center; color: #48484A; font-size: 12px; letter-spacing: 1px; margin-top: 15px; }
         .footer-text { text-align: center; font-size: 10px; color: #3A3A3C; margin-top: 30px; letter-spacing: 2px; }
 
-        .alias-input { padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: white; width: 100%; box-sizing: border-box; font-size: 14px;}
-        .alias-btn { background: var(--accent-blue); color: white; border: none; border-radius: 8px; padding: 0 15px; font-weight: 600; cursor: pointer; }
+        /* 展開式表單的樣式 */
+        .alias-btn { background: var(--accent-blue); color: white; border: none; border-radius: 8px; padding: 6px 15px; font-weight: 600; cursor: pointer; font-size: 14px; transition: background 0.3s; }
+        .alias-list-container { max-height: 400px; overflow-y: auto; padding-right: 5px; margin-top: 15px; }
+        .alias-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 0.5px solid rgba(255,255,255,0.05); padding-bottom: 10px; }
+        .alias-row span { color: var(--text-secondary); font-size: 14px; flex: 1; margin-right: 10px; word-break: break-all; }
+        .alias-row input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: white; outline: none; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -117,15 +119,14 @@
     </div>
 
     <div id="settingsArea" class="macos-card" style="display: none; margin-top:-10px;">
-        <p class="info-label" style="color: var(--accent-blue); font-weight: 600;">🛠️ 自訂系統名稱 (馬甲系統)</p>
-        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-            <select id="origSys" class="alias-input" style="flex: 1;">
-                <option value="">正在掃描系統清單...</option>
-            </select>
-            <input type="text" id="newSys" class="alias-input" style="flex: 1;" placeholder="新名稱 (例: Video)">
-            <button class="alias-btn" onclick="addAlias()">新增</button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <p class="info-label" style="color: var(--accent-blue); font-weight: 600; margin: 0;">🛠️ 自訂系統名稱 (全部展開)</p>
+            <button id="saveBtn" class="alias-btn" onclick="saveAllAliases()">全部儲存</button>
         </div>
-        <div id="aliasList"></div>
+        
+        <div id="aliasEditorList" class="alias-list-container">
+            <p style="font-size: 14px; color: var(--text-secondary);">正在掃描系統清單...</p>
+        </div>
     </div>
 
     <div id="resultArea" style="display: none;">
@@ -168,15 +169,16 @@
             const response = await fetch('./data.json?v=' + new Date().getTime()); 
             dbData = await response.json();
             
-            renderAliases();         
-            populateSystemDropdown(); 
+            // 載入完畢後，立刻產生所有的輸入框清單
+            populateAliasEditor(); 
         } catch (e) {
             console.error("資料讀取失敗:", e);
             document.getElementById('placeholderText').innerText = "系統故障: 無法連線至資料庫";
         }
     }
 
-    function populateSystemDropdown() {
+    // 🌟 自動掃描並產生所有的輸入框
+    function populateAliasEditor() {
         const sysSet = new Set(); 
         
         dbData.forEach(item => {
@@ -184,12 +186,52 @@
             if (sys) sysSet.add(sys);
         });
 
-        const select = document.getElementById('origSys');
-        select.innerHTML = '<option value="">請選擇原名稱...</option>';
+        const listContainer = document.getElementById('aliasEditorList');
+        listContainer.innerHTML = '';
         
         Array.from(sysSet).sort().forEach(sys => {
-            select.innerHTML += `<option value="${sys}">${sys}</option>`;
+            // 檢查是否已經有設定好的馬甲名稱
+            const currentAlias = systemAliases[sys] || '';
+            
+            listContainer.innerHTML += `
+                <div class="alias-row">
+                    <span>${sys}</span>
+                    <input type="text" class="alias-input-bulk" data-orig="${sys}" value="${currentAlias}" placeholder="輸入新名稱 (可留白)">
+                </div>
+            `;
         });
+    }
+
+    // 🌟 一次儲存所有的輸入框內容
+    function saveAllAliases() {
+        const inputs = document.querySelectorAll('.alias-input-bulk');
+        systemAliases = {}; // 清空原本的設定，準備重新建立
+        
+        inputs.forEach(input => {
+            const orig = input.getAttribute('data-orig');
+            const alias = input.value.trim();
+            if (alias) {
+                systemAliases[orig] = alias; // 只有當你填寫了新名稱，才會被記錄
+            }
+        });
+        
+        // 存入手機瀏覽器記憶體
+        localStorage.setItem('avSystemAliases', JSON.stringify(systemAliases));
+        
+        // 給予一個視覺回饋，讓你知道儲存成功了
+        const btn = document.getElementById('saveBtn');
+        btn.innerText = "✅ 已儲存";
+        btn.style.backgroundColor = "#32D74B"; // 變成蘋果綠色
+        
+        setTimeout(() => {
+            btn.innerText = "全部儲存";
+            btn.style.backgroundColor = "var(--accent-blue)"; // 變回藍色
+        }, 1500);
+
+        // 如果當前畫面上有搜尋結果，直接重整套用新馬甲
+        if (document.getElementById('searchInput').value) {
+            handleSearch();
+        }
     }
 
     function formatID(id) {
@@ -237,14 +279,11 @@
             let sys = String(item['系統'] || '').trim();
             let conn = String(item['接頭'] || '').trim();
 
-            // 1. 套用馬甲系統設定
+            // 套用馬甲系統設定
             if (systemAliases[sys]) {
                 sys = systemAliases[sys];
             }
 
-            // (已移除「連接線 ➔ T/L」的強制轉譯，保留原始文字)
-
-            // 2. 使用系統+接頭作為合併依據
             const key = `${sys}|${conn}`; 
             const count = parseInt(item['接頭數'], 10) || 0;
             
@@ -281,46 +320,6 @@
     function toggleSettings() {
         const panel = document.getElementById('settingsArea');
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-    }
-
-    function addAlias() {
-        const orig = document.getElementById('origSys').value.trim(); 
-        const alias = document.getElementById('newSys').value.trim();
-        
-        if (orig && alias) {
-            systemAliases[orig] = alias; 
-            localStorage.setItem('avSystemAliases', JSON.stringify(systemAliases)); 
-            
-            document.getElementById('origSys').value = '';
-            document.getElementById('newSys').value = '';
-            
-            renderAliases(); 
-            if (document.getElementById('searchInput').value) {
-                handleSearch();
-            }
-        }
-    }
-
-    function removeAlias(orig) {
-        delete systemAliases[orig];
-        localStorage.setItem('avSystemAliases', JSON.stringify(systemAliases));
-        renderAliases();
-        if (document.getElementById('searchInput').value) {
-            handleSearch();
-        }
-    }
-
-    function renderAliases() {
-        const list = document.getElementById('aliasList');
-        list.innerHTML = '';
-        for (let orig in systemAliases) {
-            list.innerHTML += `
-                <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:8px; border-bottom:0.5px solid rgba(255,255,255,0.1); padding-bottom:8px; color: var(--text-secondary);">
-                    <span>${orig} ➔ <span style="color:var(--text-main); font-weight:600;">${systemAliases[orig]}</span></span>
-                    <span style="color:#FF453A; cursor:pointer;" onclick="removeAlias('${orig}')">刪除</span>
-                </div>
-            `;
-        }
     }
 
     window.onload = loadData;
