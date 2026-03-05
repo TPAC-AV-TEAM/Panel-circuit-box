@@ -367,14 +367,22 @@ function renderResult(id) {
         if (dest) g.dests.add(dest);
     }
 
-    const tableRows = [...groups.values()].map(g => `
+    // 🌟 新增 .sort() 自動排序功能
+    const tableRows = [...groups.values()]
+        .sort((a, b) => {
+            // 1. 先比較「系統」名稱，按照筆畫/字母順序把相同的系統歸類在一起
+            if (a.sys !== b.sys) return a.sys.localeCompare(b.sys, 'zh-TW');
+            // 2. 如果系統名稱一樣，就接著比較「接頭」名稱
+            return a.conn.localeCompare(b.conn, 'zh-TW');
+        })
+        .map(g => `
         <tr>
             <td><div class="sys-name">${g.sys}</div></td>
             <td>${g.conn !== '—' ? g.conn : ''}</td>
             <td>${g.qty || '—'}</td>
         </tr>`
     ).join('');
-
+    
     document.getElementById('resultArea').innerHTML = `
         <div class="card">
             <div class="tag">SYSTEM SCAN OK</div>
