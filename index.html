@@ -59,7 +59,7 @@
 
         .search-container { display: flex; gap: 8px; align-items: center; margin-top: 10px; margin-bottom: 20px; }
 
-        input[type="text"] {
+        input[type="text"], select {
             flex: 1;
             background-color: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -69,6 +69,8 @@
             font-size: 16px;
             outline: none;
         }
+
+        select option { background-color: #1c1c1e; color: #fff; }
 
         .icon-btn {
             width: 42px; height: 42px;
@@ -99,7 +101,6 @@
         .status-text { text-align: center; color: #48484A; font-size: 12px; letter-spacing: 1px; margin-top: 15px; }
         .footer-text { text-align: center; font-size: 10px; color: #3A3A3C; margin-top: 30px; letter-spacing: 2px; }
 
-        /* 馬甲設定區塊的專屬樣式 */
         .alias-input { padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.05); color: white; width: 100%; box-sizing: border-box; font-size: 14px;}
         .alias-btn { background: var(--accent-blue); color: white; border: none; border-radius: 8px; padding: 0 15px; font-weight: 600; cursor: pointer; }
     </style>
@@ -118,8 +119,10 @@
     <div id="settingsArea" class="macos-card" style="display: none; margin-top:-10px;">
         <p class="info-label" style="color: var(--accent-blue); font-weight: 600;">🛠️ 自訂系統名稱 (馬甲系統)</p>
         <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-            <input type="text" id="origSys" class="alias-input" placeholder="原名稱 (例: 視訊系統)">
-            <input type="text" id="newSys" class="alias-input" placeholder="新名稱 (例: Video)">
+            <select id="origSys" class="alias-input" style="flex: 1;">
+                <option value="">正在掃描系統清單...</option>
+            </select>
+            <input type="text" id="newSys" class="alias-input" style="flex: 1;" placeholder="新名稱 (例: Video)">
             <button class="alias-btn" onclick="addAlias()">新增</button>
         </div>
         <div id="aliasList"></div>
@@ -158,18 +161,35 @@
 
 <script>
     let dbData = [];
-    // 🌟 讀取儲存在手機/瀏覽器裡的馬甲設定，如果沒有就預設為空物件 {}
     let systemAliases = JSON.parse(localStorage.getItem('avSystemAliases')) || {};
 
     async function loadData() {
         try {
             const response = await fetch('./data.json?v=' + new Date().getTime()); 
             dbData = await response.json();
-            renderAliases(); // 載入畫面時順便畫出設定好的馬甲清單
+            
+            renderAliases();         
+            populateSystemDropdown(); 
         } catch (e) {
             console.error("資料讀取失敗:", e);
             document.getElementById('placeholderText').innerText = "系統故障: 無法連線至資料庫";
         }
+    }
+
+    function populateSystemDropdown() {
+        const sysSet = new Set(); 
+        
+        dbData.forEach(item => {
+            let sys = String(item['系統'] || '').trim();
+            if (sys) sysSet.add(sys);
+        });
+
+        const select = document.getElementById('origSys');
+        select.innerHTML = '<option value="">請選擇原名稱...</option>';
+        
+        Array.from(sysSet).sort().forEach(sys => {
+            select.innerHTML += `<option value="${sys}">${sys}</option>`;
+        });
     }
 
     function formatID(id) {
@@ -212,24 +232,20 @@
         let loc = String(first['迴路盒位置'] || 'N/A').replace(/\n/g, ' ');
         document.getElementById('resLoc').innerText = loc;
 
-        // 🌟 彙整接頭數量 (已修正 Bug 與加入馬甲功能)
         const summaryMap = {};
         matches.forEach(item => {
             let sys = String(item['系統'] || '').trim();
             let conn = String(item['接頭'] || '').trim();
 
-            // 1. 檢查使用者有沒有自訂這個「系統」的名稱，有的話就替換
+            // 1. 套用馬甲系統設定
             if (systemAliases[sys]) {
                 sys = systemAliases[sys];
             }
 
-            // 2. 自動轉譯「連接線」為「T/L」
-            sys = sys.replace(/連接線/g, "T/L");
-            conn = conn.replace(/連接線/g, "T/L");
+            // (已移除「連接線 ➔ T/L」的強制轉譯，保留原始文字)
 
-            // 3. 忽略「接頭型式」，只用「系統+接頭」當作合併數量的依據
+            // 2. 使用系統+接頭作為合併依據
             const key = `${sys}|${conn}`; 
-            
             const count = parseInt(item['接頭數'], 10) || 0;
             
             if (!summaryMap[key]) {
@@ -262,27 +278,23 @@
         hideResult();
     }
 
-    // --- 🌟 馬甲系統設定相關邏輯 ---
     function toggleSettings() {
         const panel = document.getElementById('settingsArea');
         panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
     }
 
     function addAlias() {
-        const orig = document.getElementById('origSys').value.trim();
+        const orig = document.getElementById('origSys').value.trim(); 
         const alias = document.getElementById('newSys').value.trim();
         
         if (orig && alias) {
-            systemAliases[orig] = alias; // 存入變數
-            localStorage.setItem('avSystemAliases', JSON.stringify(systemAliases)); // 存入瀏覽器記憶體
+            systemAliases[orig] = alias; 
+            localStorage.setItem('avSystemAliases', JSON.stringify(systemAliases)); 
             
-            // 清空輸入框
             document.getElementById('origSys').value = '';
             document.getElementById('newSys').value = '';
             
-            renderAliases(); // 更新畫面
-            
-            // 如果當前有在搜尋，直接重整結果套用新名稱
+            renderAliases(); 
             if (document.getElementById('searchInput').value) {
                 handleSearch();
             }
