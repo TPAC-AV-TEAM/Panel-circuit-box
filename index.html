@@ -354,27 +354,24 @@ function renderResult(id) {
     const first = matches[0];
     const hall  = HALL_MAP[first.hall] || { short: first.hall, color: '#8E8E93' };
 
-    // 🌟 修改點 1：依照你的需求，只用「系統」與「接頭」來進行 GroupBy
+    // Group by sys + conn，加總數量，彙整目的地
     const groups = new Map();
     for (const d of matches) {
-        // 套用馬甲，如果空白則顯示「未分類」
-        let sys = d.sys ? (aliases[d.sys] || d.sys) : '未分類';
-        let conn = d.conn || '—';
-        
-        const key = sys + '|' + conn;
-        
-        if (!groups.has(key)) {
-            groups.set(key, { sys: sys, conn: conn, qty: 0 });
-        }
-        groups.get(key).qty += parseInt(d.qty, 10) || 0;
+        const sys  = (d.sys && (aliases[d.sys] || d.sys)) || '—';
+        const conn = d.conn || '—';
+        const key  = sys + '§' + conn;
+        if (!groups.has(key)) groups.set(key, { sys, conn, qty: 0, dests: new Set() });
+        const g = groups.get(key);
+        g.qty += d.qty || 0;
+        const dest = [d.dest, d.room, d.rack, d.dev].filter(Boolean).join(' / ');
+        if (dest) g.dests.add(dest);
     }
 
-    // 🌟 修改點 2：改回 系統 / 接頭 / 數量 的三欄式表格排版
     const tableRows = [...groups.values()].map(g => `
         <tr>
-            <td class="sys-name">${g.sys}</td>
-            <td>${g.conn !== '—' ? `<span class="conn-tag">${g.conn}</span>` : '—'}</td>
-            <td>${g.qty}</td>
+            <td><div class="sys-name">${g.sys}</div></td>
+            <td>${g.conn !== '—' ? g.conn : ''}</td>
+            <td>${g.qty || '—'}</td>
         </tr>`
     ).join('');
 
@@ -398,7 +395,7 @@ function renderResult(id) {
             </div>
         </div>
         <div class="card">
-            <p class="section-title">📦 接口清單</p>
+            <p class="section-title">接口清單 / INTERFACE LIST</p>
             <table>
                 <thead>
                     <tr><th>系統</th><th>接頭</th><th>數量</th></tr>
