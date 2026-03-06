@@ -122,15 +122,30 @@
         .section-title { font-size:11px; color:var(--sub); font-weight:700; letter-spacing:0.1em; margin-bottom:10px; }
         table { width:100%; border-collapse:collapse; }
         thead th {
-            text-align:left; font-size:11px; color:var(--sub); font-weight:600;
+            text-align:left; font-size:12px; color:var(--sub); font-weight:600;
             padding:0 8px 8px; border-bottom:0.5px solid var(--border);
         }
         thead th:last-child { text-align:right; }
         tbody tr { border-bottom:0.5px solid var(--sep); }
         tbody tr:last-child { border-bottom:none; }
-        tbody td { padding:11px 8px; font-size:14px; vertical-align:top; }
-        tbody td:last-child { text-align:right; color:var(--sub); font-size:13px; white-space:nowrap; }
-        .sys-name { font-weight:500; }
+        
+        /* 🌟 表格字體放大與醒目化 */
+        tbody td { 
+            padding: 14px 8px; 
+            font-size: 17px; 
+            font-weight: 500;
+            color: var(--text);
+            vertical-align: middle; 
+        }
+        tbody td:last-child { 
+            text-align: right; 
+            color: #FFFFFF; 
+            font-size: 18px; 
+            font-weight: 600;
+            white-space: nowrap; 
+        }
+        .sys-name { font-weight: 600; color: #FFFFFF; }
+        
         .conn-tag {
             display:inline-block; margin-top:3px; font-size:11px;
             color:var(--sub); background:rgba(255,255,255,0.05);
@@ -152,12 +167,12 @@
             padding:8px 0; border-bottom:0.5px solid var(--sep);
         }
         .alias-row:last-child { border-bottom:none; }
-        .alias-orig { font-size:12px; color:var(--sub); flex:1; word-break:break-all; min-width:0; }
+        .alias-orig { font-size:13px; color:var(--text); flex:1; word-break:break-all; min-width:0; }
         .alias-row input {
             flex:1; padding:7px 10px;
             border-radius:8px; border:1px solid var(--border);
             background:rgba(255,255,255,0.05); color:#fff;
-            outline:none; font-size:13px; min-width:0;
+            outline:none; font-size:14px; min-width:0;
         }
 
         /* ── Placeholder ── */
@@ -187,7 +202,6 @@
 
 <div class="content">
 
-    <!-- Settings panel -->
     <div id="settingsArea" class="card" style="display:none;margin-bottom:12px">
         <div class="settings-header">
             <span class="settings-title">🛠️ 自訂系統名稱</span>
@@ -198,10 +212,8 @@
         </div>
     </div>
 
-    <!-- Result -->
     <div id="resultArea" style="display:none"></div>
 
-    <!-- Placeholder -->
     <div id="placeholder" class="placeholder">READY TO SCAN</div>
 
 </div>
@@ -367,12 +379,9 @@ function renderResult(id) {
         if (dest) g.dests.add(dest);
     }
 
-    // 🌟 新增 .sort() 自動排序功能
     const tableRows = [...groups.values()]
         .sort((a, b) => {
-            // 1. 先比較「系統」名稱，按照筆畫/字母順序把相同的系統歸類在一起
             if (a.sys !== b.sys) return a.sys.localeCompare(b.sys, 'zh-TW');
-            // 2. 如果系統名稱一樣，就接著比較「接頭」名稱
             return a.conn.localeCompare(b.conn, 'zh-TW');
         })
         .map(g => `
