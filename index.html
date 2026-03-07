@@ -63,6 +63,7 @@
             transition: border-color 0.2s;
         }
         .search-wrap input:focus { border-color: var(--blue); }
+        
         .icon-btn {
             width:44px; height:44px;
             background: rgba(255,255,255,0.07);
@@ -127,9 +128,6 @@
         }
         thead th:last-child { text-align:right; }
         tbody tr { border-bottom:0.5px solid var(--sep); }
-        tbody tr:last-child { border-bottom:none; }
-        
-        /* 🌟 表格字體放大與醒目化 */
         tbody td { 
             padding: 14px 8px; 
             font-size: 17px; 
@@ -145,28 +143,26 @@
             white-space: nowrap; 
         }
         .sys-name { font-weight: 600; color: #FFFFFF; }
-        
-        .conn-tag {
-            display:inline-block; margin-top:3px; font-size:11px;
-            color:var(--sub); background:rgba(255,255,255,0.05);
-            border-radius:6px; padding:1px 7px;
-        }
-        .dest-cell { font-size:12px; color:var(--sub); line-height:1.9; }
 
         /* ── Settings ── */
         .settings-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
         .settings-title { font-size:13px; font-weight:600; color:var(--blue); }
+        .settings-actions { display: flex; gap: 8px; align-items: center; }
         .save-btn {
             background:var(--blue); color:#fff; border:none;
             border-radius:8px; padding:6px 16px;
             font-size:13px; font-weight:600; cursor:pointer;
+        }
+        .close-settings {
+            background: rgba(255,255,255,0.1); color:#fff; border:none;
+            border-radius:8px; width:30px; height:30px;
+            font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center;
         }
         .alias-list { max-height:340px; overflow-y:auto; }
         .alias-row {
             display:flex; align-items:center; gap:10px;
             padding:8px 0; border-bottom:0.5px solid var(--sep);
         }
-        .alias-row:last-child { border-bottom:none; }
         .alias-orig { font-size:13px; color:var(--text); flex:1; word-break:break-all; min-width:0; }
         .alias-row input {
             flex:1; padding:7px 10px;
@@ -189,7 +185,7 @@
     <div class="search-bar">
         <div class="search-wrap">
             <input type="text" id="searchInput"
-                placeholder="輸入編號，如 AV 01-01 或 #1001"
+                placeholder="輸入編號，如 AV 01-01"
                 autocomplete="off"
                 oninput="handleInput()"
                 onkeydown="handleKey(event)">
@@ -201,11 +197,13 @@
 </div>
 
 <div class="content">
-
     <div id="settingsArea" class="card" style="display:none;margin-bottom:12px">
         <div class="settings-header">
             <span class="settings-title">🛠️ 自訂系統名稱</span>
-            <button class="save-btn" id="saveBtn" onclick="saveAliases()">儲存</button>
+            <div class="settings-actions">
+                <button class="save-btn" id="saveBtn" onclick="saveAliases()">儲存</button>
+                <button class="close-settings" onclick="toggleSettings()">✕</button>
+            </div>
         </div>
         <div id="aliasList" class="alias-list">
             <p style="font-size:13px;color:var(--sub)">載入中…</p>
@@ -215,13 +213,9 @@
     <div id="resultArea" style="display:none"></div>
 
     <div id="placeholder" class="placeholder">READY TO SCAN</div>
-
 </div>
 
 <script>
-/* ══════════════════════════════════════════════════════════
-   CENTRAL CONFIG
-   ══════════════════════════════════════════════════════════ */
 const HALL_MAP = {
     '大劇院':           { short:'GT',   color:'#FF3B30' },
     '多形式中劇院':     { short:'BB',   color:'#5AC8FA' },
@@ -233,62 +227,36 @@ const HALL_MAP = {
     '卸貨口與外部空間': { short:'外部', color:'#636366' },
 };
 
-/* ══════════════════════════════════════════════════════════
-   STATE
-   ══════════════════════════════════════════════════════════ */
 let db      = [];
 let aliases = JSON.parse(localStorage.getItem('avAliases') || '{}');
 let sugIdx  = -1;
 
-/* ══════════════════════════════════════════════════════════
-   DATA LOADING
-   ══════════════════════════════════════════════════════════ */
 async function loadData() {
     try {
-        const r = await fetch('./data.json');
+        const r = await fetch('./data.json?v=' + new Date().getTime());
         db = await r.json();
         buildAliasEditor();
     } catch(e) {
-        document.getElementById('placeholder').innerText = '⚠️ 無法載入 data.json，請確認檔案位置';
+        document.getElementById('placeholder').innerText = '⚠️ 無法載入 data.json';
     }
 }
 
-/* ══════════════════════════════════════════════════════════
-   ID NORMALIZER
-   支援輸入格式：AV 01-01 / av0101 / 01-01 / #1001 / 1001
-   ══════════════════════════════════════════════════════════ */
 function buildCandidates(raw) {
-    const s = raw.trim().toUpperCase().replace(/\s+/g, ' ');
+    const s = raw.trim().toUpperCase();
     if (!s) return [];
-
     const set = new Set([s]);
-
-    if (s.startsWith('#')) {
-        set.add(s.slice(1));
-    } else {
-        set.add('#' + s);
-        set.add('#' + s.replace(/\s/g, ''));
-    }
-
     const noPrefix = s.replace(/^AV\s*/, '');
     set.add('AV ' + noPrefix);
-    // Handle zero-padded: "0101" → "01-01"
     set.add('AV ' + noPrefix.replace(/^(\d{2})(\d{2})$/, '$1-$2'));
-
     return Array.from(set);
 }
 
-/* ══════════════════════════════════════════════════════════
-   SEARCH HANDLERS
-   ══════════════════════════════════════════════════════════ */
 function handleInput() {
     const val = document.getElementById('searchInput').value;
     sugIdx = -1;
     if (!val.trim()) { clearSearch(); return; }
-
     const candidates = buildCandidates(val);
     const q = val.trim().toUpperCase();
-
     const seen = new Set();
     const sugs = [];
     for (const d of db) {
@@ -300,34 +268,23 @@ function handleInput() {
         }
         if (sugs.length >= 15) break;
     }
-
-    if (!sugs.length) {
-        hideSuggestions();
-        showPlaceholder('查無此編號');
-        return;
-    }
-
-    // Exact single match → show result directly
+    if (!sugs.length) { hideSuggestions(); showPlaceholder('查無此編號'); return; }
     if (sugs.length === 1 && candidates.some(c => sugs[0].id.toUpperCase() === c)) {
-        hideSuggestions();
-        renderResult(sugs[0].id);
-        return;
+        hideSuggestions(); renderResult(sugs[0].id); return;
     }
-
     renderSuggestions(sugs);
 }
 
 function handleKey(e) {
-    const box   = document.getElementById('suggestions');
+    const box = document.getElementById('suggestions');
     const items = box.querySelectorAll('.sug-item');
     if (box.style.display === 'none' || !items.length) {
         if (e.key === 'Enter') handleInput();
         return;
     }
-    if      (e.key === 'ArrowDown') { sugIdx = Math.min(sugIdx + 1, items.length - 1); highlightSug(items); e.preventDefault(); }
-    else if (e.key === 'ArrowUp')   { sugIdx = Math.max(sugIdx - 1, -1);               highlightSug(items); e.preventDefault(); }
-    else if (e.key === 'Enter')     { sugIdx >= 0 ? items[sugIdx].click() : handleInput(); }
-    else if (e.key === 'Escape')    { hideSuggestions(); }
+    if (e.key === 'ArrowDown') { sugIdx = Math.min(sugIdx + 1, items.length - 1); highlightSug(items); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { sugIdx = Math.max(sugIdx - 1, -1); highlightSug(items); e.preventDefault(); }
+    else if (e.key === 'Enter') { sugIdx >= 0 ? items[sugIdx].click() : handleInput(); }
 }
 
 function highlightSug(items) {
@@ -346,51 +303,27 @@ function renderSuggestions(sugs) {
     document.getElementById('suggestions').style.display = 'block';
 }
 
-function hideSuggestions() {
-    document.getElementById('suggestions').style.display = 'none';
-}
+function hideSuggestions() { document.getElementById('suggestions').style.display = 'none'; }
+function selectSug(id) { document.getElementById('searchInput').value = id; hideSuggestions(); renderResult(id); }
 
-function selectSug(id) {
-    document.getElementById('searchInput').value = id;
-    hideSuggestions();
-    renderResult(id);
-}
-
-/* ══════════════════════════════════════════════════════════
-   RESULT RENDERER
-   ══════════════════════════════════════════════════════════ */
 function renderResult(id) {
     const matches = db.filter(d => d.id === id);
     if (!matches.length) { showPlaceholder('查無此編號'); return; }
-
     const first = matches[0];
-    const hall  = HALL_MAP[first.hall] || { short: first.hall, color: '#8E8E93' };
+    const hall = HALL_MAP[first.hall] || { short: first.hall, color: '#8E8E93' };
 
-    // Group by sys + conn，加總數量，彙整目的地
     const groups = new Map();
     for (const d of matches) {
-        const sys  = (d.sys && (aliases[d.sys] || d.sys)) || '—';
+        const sys = (d.sys && (aliases[d.sys] || d.sys)) || '—';
         const conn = d.conn || '—';
-        const key  = sys + '§' + conn;
-        if (!groups.has(key)) groups.set(key, { sys, conn, qty: 0, dests: new Set() });
-        const g = groups.get(key);
-        g.qty += d.qty || 0;
-        const dest = [d.dest, d.room, d.rack, d.dev].filter(Boolean).join(' / ');
-        if (dest) g.dests.add(dest);
+        const key = sys + '§' + conn;
+        if (!groups.has(key)) groups.set(key, { sys, conn, qty: 0 });
+        groups.get(key).qty += d.qty || 0;
     }
 
     const tableRows = [...groups.values()]
-        .sort((a, b) => {
-            if (a.sys !== b.sys) return a.sys.localeCompare(b.sys, 'zh-TW');
-            return a.conn.localeCompare(b.conn, 'zh-TW');
-        })
-        .map(g => `
-        <tr>
-            <td><div class="sys-name">${g.sys}</div></td>
-            <td>${g.conn !== '—' ? g.conn : ''}</td>
-            <td>${g.qty || '—'}</td>
-        </tr>`
-    ).join('');
+        .sort((a, b) => a.sys.localeCompare(b.sys, 'zh-TW'))
+        .map(g => `<tr><td><div class="sys-name">${g.sys}</div></td><td>${g.conn !== '—' ? g.conn : ''}</td><td>${g.qty || '—'}</td></tr>`).join('');
     
     document.getElementById('resultArea').innerHTML = `
         <div class="card">
@@ -414,70 +347,58 @@ function renderResult(id) {
         <div class="card">
             <p class="section-title">接口清單 / INTERFACE LIST</p>
             <table>
-                <thead>
-                    <tr><th>系統</th><th>接頭</th><th>數量</th></tr>
-                </thead>
+                <thead><tr><th>系統</th><th>接頭</th><th>數量</th></tr></thead>
                 <tbody>${tableRows}</tbody>
             </table>
         </div>`;
-
     document.getElementById('resultArea').style.display = 'block';
     document.getElementById('placeholder').style.display = 'none';
 }
 
-/* ══════════════════════════════════════════════════════════
-   HELPERS
-   ══════════════════════════════════════════════════════════ */
 function showPlaceholder(msg) {
     document.getElementById('resultArea').style.display = 'none';
     const el = document.getElementById('placeholder');
-    el.style.display = 'block';
-    el.innerText = msg;
+    el.style.display = 'block'; el.innerText = msg;
 }
 
 function clearSearch() {
     document.getElementById('searchInput').value = '';
-    hideSuggestions();
-    showPlaceholder('READY TO SCAN');
+    hideSuggestions(); showPlaceholder('READY TO SCAN');
 }
 
-/* ══════════════════════════════════════════════════════════
-   ALIAS SETTINGS
-   ══════════════════════════════════════════════════════════ */
 function buildAliasEditor() {
     const systems = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
     document.getElementById('aliasList').innerHTML = systems.map(s => `
         <div class="alias-row">
             <span class="alias-orig">${s}</span>
-            <input class="alias-input" data-orig="${s}"
-                value="${aliases[s] || ''}" placeholder="自訂名稱（可留空）">
-        </div>`
-    ).join('');
+            <input class="alias-input" data-orig="${s}" value="${aliases[s] || ''}" placeholder="自訂名稱">
+        </div>`).join('');
 }
 
 function saveAliases() {
-    aliases = {};
     document.querySelectorAll('.alias-input').forEach(el => {
         const v = el.value.trim();
         if (v) aliases[el.dataset.orig] = v;
+        else delete aliases[el.dataset.orig];
     });
     localStorage.setItem('avAliases', JSON.stringify(aliases));
     const btn = document.getElementById('saveBtn');
     btn.innerText = '✅ 已儲存'; btn.style.background = 'var(--green)';
-    setTimeout(() => { btn.innerText = '儲存'; btn.style.background = 'var(--blue)'; }, 1500);
+    setTimeout(() => { 
+        btn.innerText = '儲存'; btn.style.background = 'var(--blue)'; 
+        toggleSettings(); // 儲存完自動收起
+    }, 800);
     const val = document.getElementById('searchInput').value.trim();
-    if (val) handleInput();
+    if (val) renderResult(val);
 }
 
 function toggleSettings() {
     const el = document.getElementById('settingsArea');
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    if (el.style.display === 'block') hideSuggestions();
 }
 
-document.addEventListener('click', e => {
-    if (!e.target.closest('.search-wrap')) hideSuggestions();
-});
-
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) hideSuggestions(); });
 window.onload = loadData;
 </script>
 </body>
