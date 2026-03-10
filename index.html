@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AV 迴路盒查詢 | V4</title>
+    <title>AV 迴路盒查詢 | V5</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -376,6 +376,14 @@ function renderResult(id) {
                 <div class="info-item">
                     <div class="label">位置</div>
                     <div class="value" style="font-size:16px">${escHtml(first.loc || '—')}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">目的地樓層</div>
+                    <div class="value" style="font-size:16px">${escHtml(first.dest_floor || '—')}</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">機房名稱</div>
+                    <div class="value" style="font-size:16px">${escHtml(first.room_name || '—')}</div>
                 </div>
             </div>
         </div>
