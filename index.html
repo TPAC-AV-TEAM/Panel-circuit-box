@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V6.5 Pro (Custom Sort)</title>
+    <title>AV 迴路盒查詢 | V6.6 Pro (Floor Engine Upgraded)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -175,7 +175,6 @@
 <script>
 /**
  * 中央配置 (CENTRAL CONFIG)
- * 加入了 order 屬性，用來控制下拉選單的絕對排序
  */
 const CONFIG = {
     DATA_URL: './data.json',
@@ -242,16 +241,26 @@ async function loadData() {
 
             let floor = '';
             let exactLoc = (d.loc || '').trim();
-            const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
+            
+            // 【V6.6 修復：全面攔截 5M, 5MF, B1M, RF 等格式】
+            const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}F|[B]?\d{1,2}M[F]?|RF)(?![a-zA-Z0-9])/i);
             
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
+                // 若字串只有 5M，強制補上 F 變為 5MF
+                if (floor.endsWith('M')) floor += 'F'; 
                 exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
-                const idMatch = stdId.match(/^AV\s*(\d{2}[a-zA-Z]?)/);
-                if (idMatch) floor = idMatch[1].toUpperCase() + 'F';
+                // 若位置沒寫，從 ID 萃取。同時支援單碼 ID (如 AV 5M-01) 與雙碼 ID (如 AV 05M-01)
+                const idMatch = stdId.match(/^AV\s*(\d{1,2}[M]?)/i);
+                if (idMatch) {
+                    floor = idMatch[1].toUpperCase();
+                    // ID 抓出來的通常沒有 F，手動補上
+                    if (!floor.endsWith('F')) floor += 'F';
+                }
             }
 
+            // 清洗前導零 (05MF -> 5MF, B02F -> B2F)
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
 
             return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
@@ -274,17 +283,21 @@ function populateInitialFilters() {
     updateDropdownOptions('selLoc', uniqueBoxes.map(d => d._exactLoc));
 }
 
-// 【V6.5 核心排序引擎】
+// 【V6.6 小數點權重排序引擎】
 function getFloorWeight(floorStr) {
     if (!floorStr || floorStr === '未知樓層') return 999;
-    if (floorStr === 'RF') return 100; // 屋頂通常最高
-    // 如果是地下室 (B開頭)，轉為負數排序 (例如 B2F -> -2, B1F -> -1)
-    if (floorStr.startsWith('B')) {
-        const num = parseInt(floorStr.replace(/\D/g, ''), 10) || 0;
-        return -num; 
-    }
-    // 一般樓層
-    return parseInt(floorStr.replace(/\D/g, ''), 10) || 0;
+    if (floorStr === 'RF') return 100; // 屋頂最高
+    
+    let weight = parseInt(floorStr.replace(/\D/g, ''), 10) || 0;
+    
+    // 如果是地下室 (B開頭)，轉為負數 (B2F -> -2, B1F -> -1)
+    if (floorStr.startsWith('B')) weight = -weight; 
+    
+    // 關鍵！如果樓層字串裡包含 M (如 5MF)，加上 0.5 權重
+    // 這樣 5MF (5.5) 就會精準排在 5F (5.0) 的正下方
+    if (floorStr.includes('M')) weight += 0.5;
+    
+    return weight;
 }
 
 function updateDropdownOptions(selectId, dataArray) {
@@ -293,19 +306,15 @@ function updateDropdownOptions(selectId, dataArray) {
     const defaultText = sel.options[0].text; 
     let uniqueVals = [...new Set(dataArray.filter(Boolean))];
     
-    // 【業務邏輯排序分流】
     if (selectId === 'selHall') {
-        // 依照 CONFIG 中定義的 order 權重排序 (如果沒定義則丟到最後面 99)
         uniqueVals.sort((a, b) => {
             const orderA = CONFIG.HALL_MAP[a]?.order || 99;
             const orderB = CONFIG.HALL_MAP[b]?.order || 99;
             return orderA - orderB;
         });
     } else if (selectId === 'selFloor') {
-        // 語意化樓層排序 (-2, -1, 1, 2, 3...)
         uniqueVals.sort((a, b) => getFloorWeight(a) - getFloorWeight(b));
     } else {
-        // 位置 (Loc) 維持預設的字典排序
         uniqueVals.sort();
     }
     
