@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V7.0 Pro (Final Stable)</title>
+    <title>AV 迴路盒查詢 | V7.1 Pro (Data Resilience)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -134,7 +134,7 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="輸入編號 (支援 0401, 04-01)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="輸入編號 (支援 0401, #301)" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -204,17 +204,22 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 });
 
-// 【智慧搜尋引擎】自動還原字串格式：支援 0401, 04-01, AV0401, AV 04-01
+// 【修正 1：智慧搜尋引擎收斂】不再盲目為所有數字補 AV，保留 301 找 #301 的彈性
 function normalizeSearchInput(rawVal) {
     let val = rawVal.trim().toUpperCase();
     if (!val) return '';
-    // 如果是 4 碼純數字 (如 0401)，補上橫線 -> 04-01
-    if (/^\d{4}$/.test(val)) val = val.substring(0, 2) + '-' + val.substring(2);
-    // 如果起頭是數字 (如 04-01 或 0401)，補上 AV -> AV 04-01
-    if (/^\d/.test(val)) val = 'AV ' + val;
+    
+    // 如果是 4 碼純數字 (如 0401)，精準轉為 AV 04-01
+    if (/^\d{4}$/.test(val)) return `AV ${val.substring(0, 2)}-${val.substring(2)}`;
+    
+    // 如果是 04-01 格式，精準補上 AV
+    if (/^\d{2}-\d{2}/.test(val)) return `AV ${val}`;
+    
     // 處理 AV 黏在一起的狀況 (AV04-01 -> AV 04-01)
     val = val.replace(/^AV\s*/, 'AV ');
     val = val.replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+    
+    // 若為其他格式 (如 301)，原封不動回傳讓模糊搜尋接手
     return val;
 }
 
@@ -263,23 +268,25 @@ async function loadData() {
             let floor = '';
             let exactLoc = (d.loc || '').trim();
             
-            // 【V7.0 修復：移除激進轉換，只做精準備對】
-            // 如果明確寫了 1F, B1F, 5MF, RF 才會抽走
             const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
             
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
                 exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
-                // 退回從 ID 推導 (AV 05-01 -> 5F)
-                const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
-                if (idMatch) {
-                    floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
+                // 【修正 3：房號格式 03.xx 解析】支援萃取 #301/#302 隱藏的樓層
+                const roomMatch = exactLoc.match(/^0?(\d{1,2})\.\d{2}/);
+                if (roomMatch) {
+                    floor = roomMatch[1] + 'F';
+                } else {
+                    const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
+                    if (idMatch) {
+                        floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
+                    }
                 }
             }
 
-            // 【終極業務規則】強迫將 05-61 ~ 05-66 歸類到 5MF
-            // 支援可能有子編號的情況 (例如 AV 05-61.01)
+            // 終極業務規則：強迫將 05-61 ~ 05-66 歸類到 5MF
             if (/^AV\s*05-6[1-6](?:\.\d+)?$/i.test(stdId)) {
                 floor = '5MF';
             }
@@ -415,7 +422,6 @@ function handleMainInput() {
 
     if (!val) return getEle('suggestions').style.display = 'none';
     
-    // 放寬比對邏輯，支援模糊搜索
     const searchRegex = new RegExp(val.replace(/\s+/g, '\\s*'), 'i');
     
     const sugs = uniqueBoxes.filter(d => searchRegex.test(d.id)).slice(0, CONFIG.MAX_SUGGESTIONS);
@@ -439,6 +445,9 @@ function renderResult(id) {
     const first = matches[0];
     const hallInfo = CONFIG.HALL_MAP[first.hall] || { name: first.hall || '—', short: '?', color: '#8E8E93' };
 
+    // 【修正 2：多重位置聚合】將同 ID 下的所有不重複位置收集起來並用斜線串接
+    const uniqueLocs = [...new Set(matches.map(d => d.loc?.trim()).filter(Boolean))].join(' / ') || '—';
+
     const groups = new Map();
     matches.forEach(d => {
         const sys = (d.sys && (aliases[d.sys] || d.sys)) || '未命名系統';
@@ -450,7 +459,7 @@ function renderResult(id) {
 
     const rows = [...groups.values()].sort((a,b) => a.sys.localeCompare(b.sys,'zh-TW')).map(g => 
         `<tr><td><div class="sys-name">${escHtml(g.sys)}</div><div class="dest-info"><span class="dest-icon">↳</span> <span>${escHtml(g.destInfo)}</span></div></td>
-        <td>${g.conn !== '—' ? escHtml(g.conn) : ''}</td><td>${g.qty||'0'}</td></tr>`
+        <td>${escHtml(g.conn)}</td><td>${g.qty||'0'}</td></tr>` // 【修正 4：讓缺少的 conn 也穩定顯示為 —】
     ).join('');
 
     getEle('resultArea').innerHTML = `
@@ -459,7 +468,7 @@ function renderResult(id) {
             <div class="id-label">${escHtml(first.id)}</div><hr class="divider">
             <div class="info-grid">
                 <div class="info-item"><div class="label">廳別</div><div class="value"><span class="hall-badge" style="background:${hallInfo.color}22;color:${hallInfo.color}">${escHtml(hallInfo.short)}</span><span style="font-size:16px;font-weight:500">${escHtml(hallInfo.name)}</span></div></div>
-                <div class="info-item"><div class="label">位置</div><div class="value" style="font-size:16px">${escHtml(first.loc||'—')}</div></div>
+                <div class="info-item"><div class="label">位置</div><div class="value" style="font-size:16px; word-break:break-word;">${escHtml(uniqueLocs)}</div></div>
             </div>
         </div>
         <div class="card"><p class="section-title">接口清單 / INTERFACE LIST</p>
