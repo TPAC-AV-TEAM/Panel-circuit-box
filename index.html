@@ -215,6 +215,16 @@ const CONFIG = {
     DATA_URL: './data.json',
     STORAGE_KEY: 'avAliases',
     MAX_SUGGESTIONS: 15,
+    HALL_ORDER: [
+        '大劇院',
+        '多形式中劇院',
+        '鏡框式中劇院',
+        '偶劇院',
+        '排練室',
+        '屋頂劇場',
+        '公共區域',
+        '卸貨口與外部空間',
+    ],
     HALL_MAP: {
         '大劇院':       { name: 'GT 大劇院',   short: 'GT', color: '#FF3B30' },
         '多形式中劇院': { name: 'BB 藍盒子',   short: 'BB', color: '#5AC8FA' },
@@ -306,7 +316,19 @@ function updateDropdownOptions(selectId, dataArray) {
     const sel = getEle(selectId);
     const currentVal = sel.value;
     const defaultText = sel.options[0].text; 
-    const uniqueVals = [...new Set(dataArray.filter(Boolean))].sort();
+    const uniqueVals = [...new Set(dataArray.filter(Boolean))];
+
+    if (selectId === 'selHall') {
+        uniqueVals.sort((a, b) => {
+            const ia = CONFIG.HALL_ORDER.indexOf(a);
+            const ib = CONFIG.HALL_ORDER.indexOf(b);
+            const ra = ia === -1 ? Number.MAX_SAFE_INTEGER : ia;
+            const rb = ib === -1 ? Number.MAX_SAFE_INTEGER : ib;
+            return ra === rb ? a.localeCompare(b, 'zh-TW') : ra - rb;
+        });
+    } else {
+        uniqueVals.sort();
+    }
     
     sel.innerHTML = `<option value="">${defaultText}</option>` + 
         uniqueVals.map(v => {
