@@ -149,9 +149,7 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <form action="javascript:void(0);" style="width:100%;margin:0;padding:0;">
-                    <input type="search" id="searchInput" placeholder="搜尋編號、廳別、線材或接頭…" autocomplete="off">
-                </form>
+                <input type="search" id="searchInput" placeholder="搜尋編號、廳別、線材或接頭…" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -260,7 +258,6 @@ function normalizeId(raw) {
     if (/^\d{4}$/.test(v)) return `AV ${v.slice(0,2)}-${v.slice(2)}`;
     if (/^\d{2}-\d{2}/.test(v)) return `AV ${v}`;
     v = v.replace(/^AV\s*/, 'AV ');
-    v = v.replace(/^AV\s*(\d{2})(\d{2})$/, 'AV $1-$2');
     return v;
 }
 
