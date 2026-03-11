@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V11.3</title>
+    <title>AV 迴路盒查詢 | V11.4 Pure</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -15,7 +15,7 @@
             --card:        #151517;
             --card-border: rgba(255,255,255,0.12);
             --blue:        #0A84FF;
-            --blue-glow:   rgba(10,132,255,0.25);
+            --blue-glow:   rgba(10, 132, 255, 0.25);
             --green:       #32D74B;
             --text-main:   #FFFFFF;
             --text-sub:    #A1A1A8;
@@ -45,6 +45,7 @@
         .search-group { display: flex; flex-direction: column; gap: 12px; max-width: 540px; margin: 0 auto; }
         .search-row { display: flex; gap: 8px; align-items: center; width: 100%; }
         .search-wrap { position: relative; flex: 1; }
+        /* 【精簡】移除外層 form 標籤 */
         .search-wrap input {
             width: 100%; background: var(--input-bg); border: 1.5px solid transparent;
             border-radius: 16px; padding: 16px 18px; color: var(--text-main); font-size: 16px;
@@ -114,10 +115,7 @@
         thead th:nth-child(3) { width: 15%; text-align: right; }
         tbody tr.data-row { border-bottom: 1px solid var(--sep); }
         tbody td { padding: 14px 4px; font-size: 16px; font-weight: 500; vertical-align: top; word-wrap: break-word; }
-        
-        /* 【UI 微調】讓接頭欄位變成灰色輔助字體 */
         tbody td:nth-child(2) { color: var(--text-sub); font-size: 14.5px; font-weight: 400; }
-        
         tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; }
         .sys-name { font-weight: 600; line-height: 1.4; transition: color 0.2s; }
         .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
@@ -145,7 +143,7 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V11.3</div>
+    <div class="version-label">V11.4 PURE</div>
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
@@ -236,22 +234,18 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 });
 
-// 【邏輯升級】加入 order 權重，確保「揚聲(35)」排在「音頻(30)」之後
 function getSysCategory(sysName) {
     const s = String(sysName).toUpperCase();
     if (s.includes('POWER') || s.includes('電源') || s.includes('KW')) return { type: 'POWER', color: '#FF453A', order: 10 };
     if (s.includes('光纖'))                                            return { type: 'FIBER', color: '#0A84FF', order: 20 };
-    
-    // 將「揚聲」獨立判斷，並賦予較大的 order 值
     if (s.includes('揚聲'))                                            return { type: 'AUDIO', color: '#32D74B', order: 35 };
     if (s.includes('音頻') || s.includes('麥克風') || s.includes('廣播')) return { type: 'AUDIO', color: '#32D74B', order: 30 };
-    
     if (s.includes('視訊'))                                            return { type: 'VIDEO', color: '#FF9F0A', order: 40 };
     if (s.includes('網路') || s.includes('對講') || s.includes('RJ'))   return { type: 'NETWORK', color: '#BF5AF2', order: 50 };
-    
     return { type: 'OTHER', color: '#8E8E93', order: 99 };
 }
 
+/* 【精簡】移除重複的 ID 轉換邏輯 */
 function normalizeId(raw) {
     let v = raw.trim().toUpperCase();
     if (!v) return v;
@@ -469,7 +463,6 @@ function renderResult(id) {
         groups.get(key).qty += parseInt(d.qty, 10) || 0;
     });
 
-    // 【邏輯升級】套用 order 權重進行雙重排序：先比權重，再比字母
     const sortedGroups = [...groups.values()].sort((a,b) => {
         const catA = getSysCategory(a.sys);
         const catB = getSysCategory(b.sys);
@@ -482,12 +475,9 @@ function renderResult(id) {
 
     sortedGroups.forEach(g => {
         const cat = getSysCategory(g.sys);
-        
-        // 分類斷點：只保留空白 tr，移除舊有的 border-top (修復 Bug 3)
         if (lastSysType !== null && lastSysType !== cat.type) {
             rowsHtml += `<tr style="border:none;"><td colspan="3" style="height:18px;padding:0;"></td></tr>`;
         }
-        
         rowsHtml += `<tr class="data-row">
             <td style="border-left:3px solid ${cat.color};padding-left:12px;border-radius:2px 0 0 2px;">
                 <div class="sys-name" style="color:${cat.color};">${escHtml(g.sys)}</div>
@@ -496,7 +486,6 @@ function renderResult(id) {
             <td>${escHtml(g.conn)}</td>
             <td>${g.qty||'0'}</td>
         </tr>`;
-        
         lastSysType = cat.type;
     });
 
@@ -558,7 +547,6 @@ function buildAliasEditor() {
         </div>`).join('');
 }
 
-// 【Bug 修復】確保 Session 不遺失
 function saveAliases() {
     const btn = getEle('saveBtn');
     const userOverrides = {};
