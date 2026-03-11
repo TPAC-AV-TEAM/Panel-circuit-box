@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V9.2 Pro (UI/UX Refined)</title>
+    <title>AV 迴路盒查詢 | V10.0 Omnibox</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -25,7 +25,7 @@
             
             --border:      rgba(255,255,255,0.18); 
             --sep:         rgba(255,255,255,0.08); 
-            --input-bg:    rgba(255,255,255,0.08); 
+            --input-bg:    rgba(255,255,255,0.12); 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,119 +37,85 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* ── Header ── */
+        /* ── Header (極簡化) ── */
         .header {
-            width: 100%; padding: 52px 16px 16px; background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            width: 100%; padding: 60px 16px 20px; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; text-align: center;
         }
-        /* 【修改】標題改為純白色 */
         .header h1 {
-            font-size: 26px; font-weight: 700; color: #FFFFFF;
+            font-size: 28px; font-weight: 700; color: #FFFFFF;
             margin-bottom: 4px; letter-spacing: 0.02em;
         }
-        /* 【新增】版本號標籤樣式 */
         .version-label {
-            font-size: 11px; font-weight: 600; color: var(--blue);
-            letter-spacing: 0.15em; margin-bottom: 16px;
-            opacity: 0.8;
+            font-size: 11px; font-weight: 700; color: var(--blue);
+            letter-spacing: 0.15em; margin-bottom: 24px; opacity: 0.9;
         }
 
-        /* ── Search Group ── */
+        /* ── Omnibox 萬能搜尋框 ── */
         .search-group { display: flex; flex-direction: column; gap: 12px; max-width: 540px; margin: 0 auto; }
         .search-row { display: flex; gap: 8px; align-items: center; width: 100%; }
         
         .search-wrap { position: relative; flex: 1; }
         .search-wrap input {
             width: 100%; background: var(--input-bg); border: 1.5px solid transparent;
-            border-radius: 14px; padding: 14px 16px; color: var(--text-main); font-size: 16px; 
+            border-radius: 16px; padding: 16px 18px; color: var(--text-main); font-size: 16px; 
             outline: none; transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
             box-shadow: inset 0 0 0 0.5px var(--border);
         }
         .search-wrap input:focus { 
-            background: rgba(255,255,255,0.12); 
+            background: rgba(255,255,255,0.16); 
             border-color: var(--blue);
-            box-shadow: 0 0 0 3px var(--blue-glow);
+            box-shadow: 0 0 0 4px var(--blue-glow);
         }
         .search-wrap input::placeholder { color: rgba(255,255,255,0.45); font-weight: 400; }
         
         .icon-btn {
-            width: 48px; height: 48px; background: var(--input-bg);
-            border: 0.5px solid var(--border); border-radius: 14px;
+            width: 52px; height: 52px; background: var(--input-bg);
+            border: 0.5px solid var(--border); border-radius: 16px;
             color: var(--text-sub); cursor: pointer; font-size: 18px;
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             transition: all 0.2s;
         }
         @media (hover: hover) { 
-            .icon-btn:hover { border-color: var(--text-sub); color: var(--text-main); background: rgba(255,255,255,0.12); } 
+            .icon-btn:hover { border-color: var(--text-sub); color: var(--text-main); background: rgba(255,255,255,0.15); } 
             .sug-item:hover { background: rgba(255,255,255,0.08); } 
             .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); } 
         }
-        .icon-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.94); }
+        .icon-btn:active { background: rgba(255,255,255,0.25); transform: scale(0.94); }
 
-        /* ── Filters & Chips ── */
-        .filter-panel { 
-            background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); 
-            border-radius: 16px; padding: 14px; width: 100%; 
-        }
-        .filter-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 12px; padding: 0 4px; }
-        .clear-filter-btn { color: var(--blue); background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
-        .filter-actions { display: flex; align-items: center; gap: 8px; }
-        .filter-count { font-size: 11px; color: var(--text-mute); }
-        .filter-hint { font-size: 11px; color: var(--text-sub); margin-top: 8px; padding: 0 4px; }
-        .clear-filter-btn:active { background: rgba(10, 132, 255, 0.15); }
-        
-        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        
-        select.filter-select, .filter-input {
-            width: 100%; background: var(--input-bg); border: 1px solid var(--border);
-            border-radius: 12px; padding: 12px 10px; color: var(--text-main); font-size: 15px; outline: none;
-            transition: border-color 0.2s, background 0.2s;
-        }
-        select.filter-select {
-            appearance: none; -webkit-appearance: none; font-weight: 500;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;
-            padding-right: 30px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
-        }
-        select.filter-select:focus, .filter-input:focus { border-color: var(--blue); background: rgba(255,255,255,0.12); }
-        .filter-input::placeholder { color: rgba(255,255,255,0.45); }
-
-        .id-chips-container { margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--sep); display: flex; flex-wrap: wrap; gap: 8px; max-height: 160px; overflow-y: auto; }
-        .id-chips-container:empty { display: none; }
+        /* ── Chips & Results Wall ── */
         .id-chip { 
             background: rgba(255,255,255,0.08); border: 1px solid var(--border); 
-            border-radius: 10px; padding: 8px 14px; font-size: 15px; font-weight: 600; 
+            border-radius: 10px; padding: 10px 16px; font-size: 15px; font-weight: 600; 
             color: var(--text-main); cursor: pointer; transition: all 0.2s; 
-            animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.95); 
+            animation: fadeInScale 0.3s ease-out forwards; opacity: 0; transform: scale(0.95); 
         }
         .id-chip:active { transform: scale(0.92); background: var(--blue); color: var(--text-main); border-color: var(--blue); }
         @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
-        .chip-empty-msg { width: 100%; text-align: center; font-size: 13px; color: var(--text-sub); padding: 10px 0; }
         
-        .result-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-        .result-chips .id-chip { opacity: 1; transform: scale(1); animation: none; }
+        .result-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
         .result-meta { font-size: 13px; color: var(--text-sub); margin-top: 6px; font-weight: 500; }
 
         /* ── Suggestions ── */
-        .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: rgba(28,28,30,0.98); border: 1px solid var(--card-border); border-radius: 16px; overflow-y: auto; max-height: 40vh; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 200; display: none; }
+        .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: rgba(28,28,30,0.98); border: 1px solid var(--card-border); border-radius: 16px; overflow-y: auto; max-height: 45vh; box-shadow: 0 12px 48px rgba(0,0,0,0.8); z-index: 200; display: none; }
         .sug-item { padding: 14px 16px; cursor: pointer; border-bottom: 0.5px solid var(--sep); display: flex; flex-direction: column; gap: 6px; }
         .sug-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; letter-spacing: 0.02em; }
         .sug-hall { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
         .sug-loc { font-size: 13px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 
         /* ── Content & Card ── */
-        .content { width: 100%; max-width: 540px; padding: 20px 16px 0; }
+        .content { width: 100%; max-width: 540px; padding: 24px 16px 0; }
         .card { 
             background: var(--card); border: 1px solid var(--card-border); 
-            border-radius: 20px; padding: 22px; margin-bottom: 16px; 
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: fadeIn 0.3s ease-out; 
+            border-radius: 20px; padding: 24px; margin-bottom: 16px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: fadeIn 0.3s ease-out; 
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         
-        .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--blue); margin-bottom: 8px; }
+        .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--blue); margin-bottom: 10px; }
         .id-label { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
-        .divider { border: none; border-top: 1px solid var(--sep); margin: 16px 0; }
+        .divider { border: none; border-top: 1px solid var(--sep); margin: 18px 0; }
         
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .info-item .label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; font-weight: 500; }
@@ -175,7 +141,7 @@
         .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
         .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; }
 
-        /* ── Settings ── */
+        /* ── Settings & Placeholder ── */
         .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .save-btn { background: var(--blue); color: var(--text-main); border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .close-settings { background: rgba(255,255,255,0.1); color: var(--text-main); border: none; border-radius: 10px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -183,41 +149,28 @@
         .alias-orig { font-size: 14px; color: var(--text-mute); flex: 1; word-break: break-all; min-width: 0; line-height: 1.3; }
         .alias-row input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 15px; min-width: 0; transition: border-color 0.2s; }
         .alias-row input:focus { border-color: var(--blue); }
-        .placeholder { text-align: center; padding: 80px 20px; color: var(--text-sub); font-size: 14px; font-weight: 500; letter-spacing: 0.15em; }
+        
+        .placeholder { 
+            text-align: center; padding: 100px 20px; color: var(--text-sub); 
+            font-size: 15px; font-weight: 500; letter-spacing: 0.05em; line-height: 1.6;
+        }
+        .placeholder span { display: block; margin-top: 8px; font-size: 13px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V9.2 PRO</div>
+    <div class="version-label">V10.0 OMNIBOX</div>
     
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="輸入編號 或 關鍵字 (如: 04-01, Twist)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="輸入編號、廳院、線材 (如: GT 4F Twist)" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
             <button class="icon-btn" id="settingBtn" title="設定">⚙️</button>
-        </div>
-
-        <div class="filter-panel">
-            <div class="filter-header">
-                <span>📍 空間與條件過濾器</span>
-                <div class="filter-actions">
-                    <span id="filterCount" class="filter-count"></span>
-                    <button class="clear-filter-btn" id="clearFilterBtn">重置條件</button>
-                </div>
-            </div>
-            <div class="filter-grid">
-                <select id="selHall" class="filter-select"><option value="">🏛️ 廳別</option></select>
-                <select id="selFloor" class="filter-select"><option value="">📶 樓層</option></select>
-                <select id="selLoc" class="filter-select"><option value="">🎯 位置</option></select>
-                <input type="text" id="selKeyword" class="filter-input" placeholder="🔍 指定條件 (接頭/線材)" autocomplete="off">
-            </div>
-            <div class="filter-hint">多條件請用空白分隔（AND）</div>
-            <div id="filterIdChips" class="id-chips-container"></div>
         </div>
     </div>
 </div>
@@ -235,7 +188,10 @@
     </div>
 
     <div id="resultArea" style="display:none"></div>
-    <div id="placeholder" class="placeholder">READY TO SCAN</div>
+    <div id="placeholder" class="placeholder">
+        準備掃描 / 查詢
+        <span>支援全域模糊搜尋與精準 ID 對接</span>
+    </div>
 </div>
 
 <script>
@@ -244,14 +200,14 @@ const CONFIG = {
     STORAGE_KEY: 'avAliases',
     MAX_SUGGESTIONS: 15,
     HALL_MAP: {
-        '大劇院':           { name: 'GT 大劇院',   short: 'GT', color: '#FF3B30', order: 1 },
-        '多形式中劇院':     { name: 'BB 藍盒子',   short: 'BB', color: '#5AC8FA', order: 2 },
-        '鏡框式中劇院':     { name: 'GP 球劇場',   short: 'GP', color: '#34C759', order: 3 },
-        '偶劇院':           { name: 'PT 偶劇院',   short: 'PT', color: '#FF9F0A', order: 4 },
-        '排練室':           { name: '排練室',      short: '練', color: '#64D2FF', order: 5 },
-        '屋頂劇場':         { name: 'RT 屋頂劇場', short: 'RT', color: '#BF5AF2', order: 6 },
-        '公共區域':         { name: '公共區域',    short: '公共', color: '#8E8E93', order: 7 },
-        '卸貨口與外部空間': { name: '外部空間',    short: '外部', color: '#636366', order: 8 },
+        '大劇院':           { name: 'GT 大劇院',   short: 'GT', color: '#FF3B30' },
+        '多形式中劇院':     { name: 'BB 藍盒子',   short: 'BB', color: '#5AC8FA' },
+        '鏡框式中劇院':     { name: 'GP 球劇場',   short: 'GP', color: '#34C759' },
+        '偶劇院':           { name: 'PT 偶劇院',   short: 'PT', color: '#FF9F0A' },
+        '排練室':           { name: '排練室',      short: '練', color: '#64D2FF' },
+        '屋頂劇場':         { name: 'RT 屋頂劇場', short: 'RT', color: '#BF5AF2' },
+        '公共區域':         { name: '公共區域',    short: '公共', color: '#8E8E93' },
+        '卸貨口與外部空間': { name: '外部空間',    short: '外部', color: '#636366' },
     }
 };
 
@@ -314,20 +270,6 @@ function buildSearchIndex() {
         map.set(id, (map.get(id) || '') + norm);
     });
     idSearchIndex = map;
-
-    uniqueBoxes.forEach(box => {
-        if (!map.has(box.id)) {
-            const fallback = normalizeForMatch([
-                box.id,
-                box.hall,
-                CONFIG.HALL_MAP[box.hall]?.short || '',
-                box._floor || '',
-                box._exactLoc || ''
-            ].join(' '));
-            map.set(box.id, fallback);
-        }
-        box._searchIndex = map.get(box.id) || '';
-    });
 }
 
 function fuzzyMatchIds(query) {
@@ -344,13 +286,13 @@ function renderListResults(list, query) {
     const ids = list.map(d => d.id).sort((a,b) => a.localeCompare(b));
     if (!ids.length) return showPlaceholder('查無符合條件的迴路盒');
     const chips = ids.map((id, i) => 
-        `<div class="id-chip" data-id="${escHtml(id)}" style="opacity:1;transform:scale(1);animation:none;animation-delay:${i*0.01}s">${escHtml(id)}</div>`
+        `<div class="id-chip" data-id="${escHtml(id)}" style="animation-delay:${i*0.015}s">${escHtml(id)}</div>`
     ).join('');
     getEle('resultArea').innerHTML = `
         <div class="card">
-            <div class="tag">FUZZY MATCH / 模糊搜尋結果</div>
-            <div class="id-label" style="font-size:22px; color:var(--text-main);">${escHtml(query)}</div>
-            <div class="result-meta">符合條件 ${ids.length} 筆（點選可進入詳情）</div>
+            <div class="tag">FUZZY MATCH / 全域搜尋結果</div>
+            <div class="id-label" style="font-size:24px; color:var(--text-main);">${escHtml(query)}</div>
+            <div class="result-meta">找到 ${ids.length} 筆相符資料（點選按鈕進入詳情）</div>
             <div class="result-chips">${chips}</div>
         </div>`;
     getEle('resultArea').style.display = 'block';
@@ -364,32 +306,42 @@ function bindEvents() {
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const raw = searchInput.value;
-            const val = normalizeSearchInput(raw);
-            if (!val) return;
+            const raw = searchInput.value.trim();
+            if (!raw) return;
+
             getEle('suggestions').style.display = 'none';
+            
+            // 判斷是否為明確的 ID 導向
+            const val = normalizeSearchInput(raw);
             if (isIdLike(val)) {
-                triggerSearch(val);
-            } else {
-                renderListResults(fuzzyMatchIds(raw), raw.trim());
+                // 確認資料庫真的有這個 ID，有的話直接打開
+                const exists = uniqueBoxes.some(d => d.id === val);
+                if (exists) return triggerSearch(val);
             }
+            
+            // 如果不是精準 ID，或者 ID 不存在，一律展開「搜尋結果牆」
+            renderListResults(fuzzyMatchIds(raw), raw);
         }
     });
 
-    getEle('clearBtn').addEventListener('click', () => { getEle('searchInput').value = ''; getEle('suggestions').style.display = 'none'; showPlaceholder('READY TO SCAN'); });
-    getEle('clearFilterBtn').addEventListener('click', resetFilters);
+    getEle('clearBtn').addEventListener('click', () => { 
+        getEle('searchInput').value = ''; 
+        getEle('suggestions').style.display = 'none'; 
+        showPlaceholder('準備掃描 / 查詢\\n<span>支援全域模糊搜尋與精準 ID 對接</span>'); 
+    });
+    
     getEle('settingBtn').addEventListener('click', () => getEle('settingsArea').style.display = getEle('settingsArea').style.display==='none'?'block':'none');
     getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
     getEle('saveBtn').addEventListener('click', saveAliases);
 
-    ['selHall', 'selFloor', 'selLoc'].forEach(id => {
-        getEle(id).addEventListener('change', updateFilters);
-    });
-    getEle('selKeyword').addEventListener('input', updateFilters);
-
+    // 委派點擊事件 (處理選單點擊與結果牆按鈕點擊)
     document.addEventListener('click', e => {
         const sug = e.target.closest('.sug-item');
-        if (sug && sug.dataset.id) return triggerSearch(sug.dataset.id);
+        if (sug && sug.dataset.id) {
+            getEle('searchInput').value = sug.dataset.id;
+            getEle('suggestions').style.display = 'none';
+            return triggerSearch(sug.dataset.id);
+        }
 
         const chip = e.target.closest('.id-chip');
         if (chip && chip.dataset.id) return triggerSearch(chip.dataset.id);
@@ -406,7 +358,6 @@ async function loadData() {
         db = rawDb.map(d => {
             let rawId = (d.id || '').trim().toUpperCase();
             let stdId = rawId.replace(/^AV\s*/, 'AV ');
-
             let floor = '';
             let exactLoc = (d.loc || '').trim();
             
@@ -421,16 +372,11 @@ async function loadData() {
                     floor = roomMatch[1] + 'F';
                 } else {
                     const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
-                    if (idMatch) {
-                        floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
-                    }
+                    if (idMatch) floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
                 }
             }
 
-            if (/0?5\s*[-_.]\s*6[1-6]/i.test(stdId)) {
-                floor = '5MF';
-            }
-
+            if (/0?5\s*[-_.]\s*6[1-6]/i.test(stdId)) floor = '5MF';
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
 
             return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
@@ -443,157 +389,32 @@ async function loadData() {
         });
 
         buildAliasEditor();
-        populateInitialFilters(); 
         buildSearchIndex();
     } catch(e) { showPlaceholder('⚠️ 無法載入資料，請確認網路連線'); }
 }
 
-function populateInitialFilters() {
-    updateDropdownOptions('selHall', uniqueBoxes.map(d => d.hall));
-    updateDropdownOptions('selFloor', uniqueBoxes.map(d => d._floor));
-    updateDropdownOptions('selLoc', uniqueBoxes.map(d => d._exactLoc));
-}
-
-function getFloorWeight(floorStr) {
-    if (!floorStr || floorStr === '未知樓層') return 999;
-    if (floorStr === 'RF') return 100; 
-    let weight = parseInt(floorStr.replace(/\D/g, ''), 10) || 0;
-    if (floorStr.startsWith('B')) weight = -weight; 
-    if (floorStr.includes('M')) weight += 0.5;
-    return weight;
-}
-
-function updateDropdownOptions(selectId, dataArray) {
-    const sel = getEle(selectId);
-    const currentVal = sel.value;
-    const defaultText = sel.options[0].text; 
-    let uniqueVals = [...new Set(dataArray.filter(Boolean))];
-    
-    if (selectId === 'selHall') {
-        uniqueVals.sort((a, b) => {
-            const orderA = CONFIG.HALL_MAP[a]?.order || 99;
-            const orderB = CONFIG.HALL_MAP[b]?.order || 99;
-            return orderA - orderB;
-        });
-    } else if (selectId === 'selFloor') {
-        uniqueVals.sort((a, b) => getFloorWeight(a) - getFloorWeight(b));
-    } else {
-        uniqueVals.sort();
-    }
-    
-    sel.innerHTML = `<option value="">${defaultText}</option>` + 
-        uniqueVals.map(v => {
-            let displayValue = selectId === 'selHall' ? (CONFIG.HALL_MAP[v]?.name || v) : v;
-            return `<option value="${escHtml(v)}">${escHtml(displayValue)}</option>`;
-        }).join('');
-    
-    if (uniqueVals.includes(currentVal)) sel.value = currentVal;
-}
-
-function updateFilters(e) {
-    let h = getEle('selHall').value;
-    let f = getEle('selFloor').value;
-    let l = getEle('selLoc').value;
-    const kRaw = getEle('selKeyword').value;
-    const kTokens = tokenizeQuery(kRaw);
-    
-    const triggerId = e ? e.target.id : null;
-
-    if (triggerId === 'selHall') {
-        const validF = uniqueBoxes.filter(d => d.hall === h).map(d => d._floor);
-        if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
-        const validL = uniqueBoxes.filter(d => d.hall === h && (!f || d._floor === f)).map(d => d._exactLoc);
-        if (l && !validL.includes(l)) { l = ''; getEle('selLoc').value = ''; }
-    } 
-    else if (triggerId === 'selFloor') {
-        const validH = uniqueBoxes.filter(d => d._floor === f).map(d => d.hall);
-        if (h && !validH.includes(h)) { h = ''; getEle('selHall').value = ''; }
-        const validL = uniqueBoxes.filter(d => d._floor === f && (!h || d.hall === h)).map(d => d._exactLoc);
-        if (l && !validL.includes(l)) { l = ''; getEle('selLoc').value = ''; }
-    } 
-    else if (triggerId === 'selLoc') {
-        const validH = uniqueBoxes.filter(d => d._exactLoc === l).map(d => d.hall);
-        if (h && !validH.includes(h)) { h = ''; getEle('selHall').value = ''; }
-        const validF = uniqueBoxes.filter(d => d._exactLoc === l && (!h || d.hall === h)).map(d => d._floor);
-        if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
-    }
-
-    getEle('suggestions').style.display = 'none';
-
-    let filteredBoxes = uniqueBoxes.filter(d => {
-        if (h && d.hall !== h) return false;
-        if (f && d._floor !== f) return false;
-        if (l && d._exactLoc !== l) return false;
-        
-        if (kTokens.length) {
-            const idx = d._searchIndex || '';
-            if (!kTokens.every(t => idx.includes(t))) return false;
-        }
-        
-        return true;
-    });
-
-    const hasFilter = Boolean(h || f || l || kTokens.length);
-    const countEl = getEle('filterCount');
-    if (countEl) countEl.textContent = hasFilter ? `符合 ${filteredBoxes.length} 筆` : '';
-
-    if (!h) updateDropdownOptions('selHall', filteredBoxes.map(d => d.hall));
-    if (!f) updateDropdownOptions('selFloor', filteredBoxes.map(d => d._floor));
-    if (!l) updateDropdownOptions('selLoc', filteredBoxes.map(d => d._exactLoc));
-
-    const chipBox = getEle('filterIdChips');
-    if (filteredBoxes.length === 0) {
-        chipBox.innerHTML = '<div class="chip-empty-msg">⚠️ 無符合條件的迴路盒</div>';
-    } else if (!h && !f && !l && !kTokens.length) {
-        chipBox.innerHTML = ''; 
-    } else {
-        chipBox.innerHTML = filteredBoxes
-            .sort((a,b) => a.id.localeCompare(b.id))
-            .map((d, i) => `<div class="id-chip" data-id="${escHtml(d.id)}" style="animation-delay:${i*0.02}s">${escHtml(d.id)}</div>`)
-            .join('');
-    }
-}
-
-function resetFilters() {
-    ['selHall', 'selFloor', 'selLoc', 'selKeyword'].forEach(id => getEle(id).value = '');
-    populateInitialFilters(); 
-    getEle('filterIdChips').innerHTML = ''; 
-    const countEl = getEle('filterCount');
-    if (countEl) countEl.textContent = '';
-}
-
-function triggerSearch(id) {
-    getEle('searchInput').value = id;
-    getEle('suggestions').style.display = 'none';
-    renderResult(id);
-}
-
+// 【V10 核心：智慧排序引擎】解決搜尋汙染，確保編號符合的排在最前面
 function handleMainInput() {
     const raw = getEle('searchInput').value;
-    const val = normalizeSearchInput(raw);
+    if (!raw.trim()) return getEle('suggestions').style.display = 'none';
 
-    if (!val) return getEle('suggestions').style.display = 'none';
+    let sugs = fuzzyMatchIds(raw);
+    const cleanRaw = raw.replace(/[^A-Z0-9]/ig, '').toUpperCase();
+
+    // 權重排序：編號本身包含關鍵字者優先
+    sugs.sort((a, b) => {
+        const aIdClean = a.id.replace(/[^A-Z0-9]/ig, '');
+        const bIdClean = b.id.replace(/[^A-Z0-9]/ig, '');
+        const aMatch = aIdClean.includes(cleanRaw);
+        const bMatch = bIdClean.includes(cleanRaw);
+
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return a.id.localeCompare(b.id);
+    });
+
+    sugs = sugs.slice(0, CONFIG.MAX_SUGGESTIONS);
     
-    if (isIdLike(val)) {
-        const searchRegex = new RegExp(escapeRegExp(val).replace(/\s+/g, '\\s*'), 'i');
-        const sugs = uniqueBoxes.filter(d => searchRegex.test(d.id)).slice(0, CONFIG.MAX_SUGGESTIONS);
-        if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
-        
-        getEle('suggestions').innerHTML = sugs.map(d => {
-            const hallInfo = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
-            const matches = db.filter(m => m.id === d.id);
-            const uniqueLocs = [...new Set(matches.map(m => m.loc?.trim()).filter(Boolean))].join(' / ') || '未標示位置';
-            
-            return `<div class="sug-item" data-id="${escHtml(d.id)}">
-                <div class="sug-header"><span style="font-weight:600; color:var(--text-main);">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hallInfo.color}25; color:${hallInfo.color}">${escHtml(hallInfo.short)}</span></div>
-                <div class="sug-loc">📍 ${escHtml(uniqueLocs)}</div>
-            </div>`;
-        }).join('');
-        getEle('suggestions').style.display = 'block';
-        return;
-    }
-
-    const sugs = fuzzyMatchIds(raw).slice(0, CONFIG.MAX_SUGGESTIONS);
     if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
     
     getEle('suggestions').innerHTML = sugs.map(d => {
@@ -649,7 +470,7 @@ function renderResult(id) {
     getEle('resultArea').style.display = 'block'; getEle('placeholder').style.display = 'none';
 }
 
-function showPlaceholder(msg) { currentId = null; getEle('resultArea').style.display = 'none'; getEle('placeholder').style.display = 'block'; getEle('placeholder').innerText = msg; }
+function showPlaceholder(msg) { currentId = null; getEle('resultArea').style.display = 'none'; getEle('placeholder').style.display = 'block'; getEle('placeholder').innerHTML = msg; }
 
 function buildAliasEditor() {
     const sysNames = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
