@@ -3,28 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V9.0 Pro (UX Enhanced)</title>
+    <title>AV 迴路盒查詢 | V9.1 Pro (UI/UX Refined)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+        /* ── 核心色彩系統 (UI 重構重點) ── */
         :root {
-            --bg:     #000000;
-            --card:   rgba(28,28,30,0.95);
-            --blue:   #0A84FF;
-            --green:  #32D74B;
-            --text:   #F5F5F7;
-            --sub:    #8E8E93;
-            --border: rgba(255,255,255,0.1);
-            --sep:    rgba(255,255,255,0.06);
+            --bg:          #000000;
+            --card:        #151517; /* 更有質感的深曜灰 */
+            --card-border: rgba(255, 255, 255, 0.12); /* 提升卡片邊緣對比 */
+            --blue:        #0A84FF;
+            --blue-glow:   rgba(10, 132, 255, 0.25);
+            --green:       #32D74B;
+            
+            --text-main:   #FFFFFF; /* 純白，主視覺 */
+            --text-sub:    #A1A1A8; /* 提亮後的次要灰 (原 #8E8E93) */
+            --text-mute:   #C7C7CC; /* 用於清單內文補充，比 sub 更亮一點 */
+            
+            --border:      rgba(255,255,255,0.18); /* 提升所有邊框的可見度 */
+            --sep:         rgba(255,255,255,0.08); /* 分隔線 */
+            --input-bg:    rgba(255,255,255,0.08); /* 輸入框底色 */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: var(--bg); color: var(--text);
+            background: var(--bg); color: var(--text-main);
             font-family: "SF Pro Display", "Inter", "-apple-system", sans-serif;
             min-height: 100vh; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
             display: flex; flex-direction: column; align-items: center;
@@ -32,113 +39,143 @@
 
         /* ── Header ── */
         .header {
-            width: 100%; padding: 52px 16px 16px; background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            width: 100%; padding: 52px 16px 16px; background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; text-align: center;
         }
         .header h1 {
-            font-size: 26px; font-weight: 700; background: linear-gradient(180deg,#fff 0%,#8E8E93 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px;
+            font-size: 26px; font-weight: 700; background: linear-gradient(180deg,#FFFFFF 0%,#A1A1A8 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 18px;
+            letter-spacing: 0.02em;
         }
 
         /* ── Search Group ── */
-        .search-group { display: flex; flex-direction: column; gap: 10px; max-width: 540px; margin: 0 auto; }
+        .search-group { display: flex; flex-direction: column; gap: 12px; max-width: 540px; margin: 0 auto; }
         .search-row { display: flex; gap: 8px; align-items: center; width: 100%; }
         
         .search-wrap { position: relative; flex: 1; }
         .search-wrap input {
-            width: 100%; background: rgba(255,255,255,0.07); border: 1px solid var(--border);
-            border-radius: 14px; padding: 12px 16px; color: #fff; font-size: 16px; outline: none;
-            transition: border-color 0.2s, background 0.2s;
+            width: 100%; background: var(--input-bg); border: 1.5px solid transparent;
+            border-radius: 14px; padding: 14px 16px; color: var(--text-main); font-size: 16px; 
+            outline: none; transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
+            box-shadow: inset 0 0 0 0.5px var(--border);
         }
-        .search-wrap input:focus { border-color: var(--blue); background: rgba(255,255,255,0.1); }
-        .search-wrap input::placeholder { color: rgba(255,255,255,0.3); }
+        /* 輸入框焦點光暈特效 */
+        .search-wrap input:focus { 
+            background: rgba(255,255,255,0.12); 
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px var(--blue-glow);
+        }
+        .search-wrap input::placeholder { color: rgba(255,255,255,0.45); font-weight: 400; }
         
         .icon-btn {
-            width: 44px; height: 44px; background: rgba(255,255,255,0.07);
-            border: 0.5px solid var(--border); border-radius: 12px;
-            color: var(--sub); cursor: pointer; font-size: 16px;
+            width: 48px; height: 48px; background: var(--input-bg);
+            border: 0.5px solid var(--border); border-radius: 14px;
+            color: var(--text-sub); cursor: pointer; font-size: 18px;
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            transition: background 0.15s, transform 0.1s;
+            transition: all 0.2s;
         }
-        @media (hover: hover) { .icon-btn:hover { border-color: var(--sub); color: #fff; } .sug-item:hover { background: rgba(255,255,255,0.08); } .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); } }
-        .icon-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.96); }
+        @media (hover: hover) { 
+            .icon-btn:hover { border-color: var(--text-sub); color: var(--text-main); background: rgba(255,255,255,0.12); } 
+            .sug-item:hover { background: rgba(255,255,255,0.08); } 
+            .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); } 
+        }
+        .icon-btn:active { background: rgba(255,255,255,0.2); transform: scale(0.94); }
 
         /* ── Filters & Chips ── */
-        .filter-panel { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 12px; width: 100%; }
-        .filter-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--sub); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 10px; padding: 0 4px; }
-        .clear-filter-btn { color: var(--blue); background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; }
+        .filter-panel { 
+            background: rgba(255,255,255,0.04); border: 1px solid var(--card-border); 
+            border-radius: 16px; padding: 14px; width: 100%; 
+        }
+        .filter-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 12px; padding: 0 4px; }
+        .clear-filter-btn { color: var(--blue); background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
+        .clear-filter-btn:active { background: rgba(10, 132, 255, 0.15); }
         
-        /* 2x2 Grid Layout */
-        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         
+        select.filter-select, .filter-input {
+            width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px 10px; color: var(--text-main); font-size: 15px; outline: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
         select.filter-select {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 8px; color: #fff; font-size: 14px; outline: none;
-            appearance: none; -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
-            text-overflow: ellipsis; white-space: nowrap; overflow: hidden; transition: border-color 0.2s;
+            appearance: none; -webkit-appearance: none; font-weight: 500;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 10px center; background-size: 16px;
+            padding-right: 30px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
         }
-        select.filter-select:focus { border-color: var(--blue); }
-        
-        .filter-input {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none;
-            transition: border-color 0.2s;
-        }
-        .filter-input:focus { border-color: var(--blue); background: rgba(255,255,255,0.1); }
-        .filter-input::placeholder { color: rgba(255,255,255,0.3); }
+        select.filter-select:focus, .filter-input:focus { border-color: var(--blue); background: rgba(255,255,255,0.12); }
+        .filter-input::placeholder { color: rgba(255,255,255,0.45); }
 
-        .id-chips-container { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--sep); display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; }
+        .id-chips-container { margin-top: 14px; padding-top: 14px; border-top: 0.5px solid var(--sep); display: flex; flex-wrap: wrap; gap: 8px; max-height: 160px; overflow-y: auto; }
         .id-chips-container:empty { display: none; }
-        .id-chip { background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.2s; animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.95); }
-        .id-chip:active { transform: scale(0.9); background: var(--blue); color: #fff; }
+        .id-chip { 
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border); 
+            border-radius: 10px; padding: 8px 14px; font-size: 15px; font-weight: 600; 
+            color: var(--text-main); cursor: pointer; transition: all 0.2s; 
+            animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.95); 
+        }
+        .id-chip:active { transform: scale(0.92); background: var(--blue); color: var(--text-main); border-color: var(--blue); }
         @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
-        .chip-empty-msg { width: 100%; text-align: center; font-size: 12px; color: var(--sub); padding: 8px 0; }
+        .chip-empty-msg { width: 100%; text-align: center; font-size: 13px; color: var(--text-sub); padding: 10px 0; }
+        
+        .result-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .result-chips .id-chip { opacity: 1; transform: scale(1); animation: none; }
+        .result-meta { font-size: 13px; color: var(--text-sub); margin-top: 6px; font-weight: 500; }
 
         /* ── Suggestions ── */
-        .suggestions { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: rgba(28,28,30,0.99); border: 0.5px solid var(--border); border-radius: 14px; overflow-y: auto; max-height: 40vh; box-shadow: 0 8px 30px rgba(0,0,0,0.6); z-index: 200; display: none; }
-        .sug-item { padding: 12px 16px; cursor: pointer; border-bottom: 0.5px solid var(--sep); display: flex; flex-direction: column; gap: 4px; }
-        .sug-header { display: flex; justify-content: space-between; align-items: center; font-size: 15px; }
-        .sug-hall { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
-        /* 【V9 新增】：建議清單位置標示 */
-        .sug-loc { font-size: 13px; color: var(--sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: rgba(28,28,30,0.98); border: 1px solid var(--card-border); border-radius: 16px; overflow-y: auto; max-height: 40vh; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 200; display: none; }
+        .sug-item { padding: 14px 16px; cursor: pointer; border-bottom: 0.5px solid var(--sep); display: flex; flex-direction: column; gap: 6px; }
+        .sug-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; letter-spacing: 0.02em; }
+        .sug-hall { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+        .sug-loc { font-size: 13px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 
         /* ── Content & Card ── */
-        .content { width: 100%; max-width: 540px; padding: 16px 16px 0; }
-        .card { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 12px; animation: fadeIn 0.3s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: var(--blue); margin-bottom: 6px; }
-        .id-label { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .divider { border: none; border-top: 0.5px solid var(--sep); margin: 14px 0; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .info-item .label { font-size: 12px; color: var(--sub); margin-bottom: 4px; }
-        .info-item .value { font-size: 17px; font-weight: 600; line-height: 1.3; }
+        .content { width: 100%; max-width: 540px; padding: 20px 16px 0; }
+        .card { 
+            background: var(--card); border: 1px solid var(--card-border); 
+            border-radius: 20px; padding: 22px; margin-bottom: 16px; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); animation: fadeIn 0.3s ease-out; 
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; color: var(--blue); margin-bottom: 8px; }
+        .id-label { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+        .divider { border: none; border-top: 1px solid var(--sep); margin: 16px 0; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .info-item .label { font-size: 13px; color: var(--text-sub); margin-bottom: 6px; font-weight: 500; }
+        .info-item .value { font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--text-main); }
         .hall-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 16px; font-weight: 700; margin-right: 8px; }
 
-        /* ── Table ── */
-        .section-title { font-size: 11px; color: var(--sub); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 10px; }
+        /* ── Table (重構閱讀體驗) ── */
+        .section-title { font-size: 12px; color: var(--text-sub); font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        thead th { text-align: left; font-size: 12px; color: var(--sub); font-weight: 600; padding: 0 4px 8px; border-bottom: 0.5px solid var(--border); }
+        thead th { 
+            text-align: left; font-size: 13px; color: var(--text-sub); font-weight: 600; 
+            padding: 0 4px 10px; border-bottom: 1px solid var(--border); letter-spacing: 0.05em; 
+        }
         thead th:nth-child(1) { width: 55%; }
         thead th:nth-child(2) { width: 30%; }
         thead th:nth-child(3) { width: 15%; text-align: right; }
-        tbody tr { border-bottom: 0.5px solid var(--sep); }
-        tbody td { padding: 12px 4px; font-size: 16px; font-weight: 500; color: var(--text); vertical-align: top; word-wrap: break-word; }
-        tbody td:last-child { text-align: right; color: #FFFFFF; font-size: 18px; font-weight: 600; }
-        .sys-name { font-weight: 600; color: #FFFFFF; }
-        .dest-info { font-size: 12px; color: var(--sub); margin-top: 4px; line-height: 1.3; display: flex; gap: 4px; }
-        .dest-icon { color: var(--blue); flex-shrink: 0; }
+        
+        tbody tr { border-bottom: 1px solid var(--sep); }
+        tbody td { padding: 14px 4px; font-size: 16px; font-weight: 500; color: var(--text-main); vertical-align: top; word-wrap: break-word; }
+        tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; color: var(--text-main); }
+        
+        .sys-name { font-weight: 600; color: var(--text-main); letter-spacing: 0.01em; line-height: 1.4; }
+        .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
+        .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; }
 
         /* ── Settings ── */
-        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .save-btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .close-settings { background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .alias-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); }
-        .alias-orig { font-size: 13px; color: var(--text); flex: 1; word-break: break-all; min-width: 0; }
-        .alias-row input { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 14px; min-width: 0; }
-        .placeholder { text-align: center; padding: 60px 20px; color: #3a3a3c; font-size: 12px; letter-spacing: 0.15em; }
+        .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .save-btn { background: var(--blue); color: var(--text-main); border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .close-settings { background: rgba(255,255,255,0.1); color: var(--text-main); border: none; border-radius: 10px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .alias-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sep); }
+        .alias-orig { font-size: 14px; color: var(--text-mute); flex: 1; word-break: break-all; min-width: 0; line-height: 1.3; }
+        .alias-row input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); outline: none; font-size: 15px; min-width: 0; transition: border-color 0.2s; }
+        .alias-row input:focus { border-color: var(--blue); }
+        .placeholder { text-align: center; padding: 80px 20px; color: var(--text-sub); font-size: 14px; font-weight: 500; letter-spacing: 0.15em; }
     </style>
 </head>
 <body>
@@ -148,7 +185,7 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="輸入編號 或 關鍵字 (如 GT 4F Twist)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="輸入編號 或 關鍵字 (如: 04-01, Twist)" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -172,15 +209,15 @@
 </div>
 
 <div class="content">
-    <div id="settingsArea" class="card" style="display:none; margin-bottom:12px;">
+    <div id="settingsArea" class="card" style="display:none; margin-bottom:16px;">
         <div class="settings-header">
-            <span style="font-size:13px; font-weight:600; color:var(--blue);">🛠️ 自訂系統名稱</span>
-            <div style="display:flex; gap:8px;">
+            <span style="font-size:15px; font-weight:600; color:var(--blue);">🛠️ 自訂系統名稱 (Alias)</span>
+            <div style="display:flex; gap:10px;">
                 <button class="save-btn" id="saveBtn">儲存</button>
                 <button class="close-settings" id="closeSettingBtn">✕</button>
             </div>
         </div>
-        <div id="aliasList" style="max-height:340px; overflow-y:auto;"></div>
+        <div id="aliasList" style="max-height:400px; overflow-y:auto; padding-right:4px;"></div>
     </div>
 
     <div id="resultArea" style="display:none"></div>
@@ -208,10 +245,17 @@ let db = [];
 let uniqueBoxes = []; 
 let aliases = {};
 let currentId = null;
+let idSearchIndex = new Map();
 
 const escHtml = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const safeParse = (str, fb) => { try { return JSON.parse(str) || fb; } catch(e) { return fb; } };
 const getEle = id => document.getElementById(id);
+const escapeRegExp = s => String(s ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const normalizeForMatch = s => String(s ?? '').toUpperCase().replace(/[^A-Z0-9\u4E00-\u9FFF]/g, '');
+const tokenizeQuery = q => String(q ?? '')
+    .split(/[\s,，、;:\/\\|]+/)
+    .map(t => normalizeForMatch(t))
+    .filter(Boolean);
 
 window.addEventListener('DOMContentLoaded', async () => {
     aliases = safeParse(localStorage.getItem(CONFIG.STORAGE_KEY), {});
@@ -229,6 +273,62 @@ function normalizeSearchInput(rawVal) {
     return val;
 }
 
+function isIdLike(val) {
+    return /^#\d+$/i.test(val) || /^AV\s*\d{2}-\d{2}(?:\.\d+)?$/i.test(val);
+}
+
+function buildSearchIndex() {
+    const map = new Map();
+    db.forEach(d => {
+        const id = d.id;
+        if (!id) return;
+        const hall = d.hall || '';
+        const hallShort = CONFIG.HALL_MAP[hall]?.short || '';
+        const fields = [
+            id, hall, hallShort,
+            d._floor || '',
+            d._exactLoc || d.loc || '',
+            d.sys || '',
+            aliases[d.sys] || '',
+            d.dest || '',
+            d.room || '',
+            d.conn || '',
+            d.rack || '',
+            d.dev || ''
+        ];
+        const norm = normalizeForMatch(fields.join(' '));
+        map.set(id, (map.get(id) || '') + norm);
+    });
+    idSearchIndex = map;
+}
+
+function fuzzyMatchIds(query) {
+    const tokens = tokenizeQuery(query);
+    if (!tokens.length) return [];
+    return uniqueBoxes.filter(d => {
+        const idx = idSearchIndex.get(d.id) || '';
+        return tokens.every(t => idx.includes(t));
+    });
+}
+
+function renderListResults(list, query) {
+    currentId = null;
+    const ids = list.map(d => d.id).sort((a,b) => a.localeCompare(b));
+    if (!ids.length) return showPlaceholder('查無符合條件的迴路盒');
+    const chips = ids.map((id, i) => 
+        `<div class="id-chip" data-id="${escHtml(id)}" style="opacity:1;transform:scale(1);animation:none;animation-delay:${i*0.01}s">${escHtml(id)}</div>`
+    ).join('');
+    getEle('resultArea').innerHTML = `
+        <div class="card">
+            <div class="tag">FUZZY MATCH / 模糊搜尋結果</div>
+            <div class="id-label" style="font-size:22px; color:var(--text-main);">${escHtml(query)}</div>
+            <div class="result-meta">符合條件 ${ids.length} 筆（點選可進入詳情）</div>
+            <div class="result-chips">${chips}</div>
+        </div>`;
+    getEle('resultArea').style.display = 'block';
+    getEle('placeholder').style.display = 'none';
+}
+
 function bindEvents() {
     const searchInput = getEle('searchInput');
     searchInput.addEventListener('input', handleMainInput);
@@ -236,13 +336,15 @@ function bindEvents() {
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const sugsBox = getEle('suggestions');
-            if (sugsBox.style.display === 'block') {
-                const firstSug = sugsBox.querySelector('.sug-item');
-                if (firstSug) return triggerSearch(firstSug.dataset.id);
+            const raw = searchInput.value;
+            const val = normalizeSearchInput(raw);
+            if (!val) return;
+            getEle('suggestions').style.display = 'none';
+            if (isIdLike(val)) {
+                triggerSearch(val);
+            } else {
+                renderListResults(fuzzyMatchIds(raw), raw.trim());
             }
-            let val = normalizeSearchInput(searchInput.value);
-            if (val) triggerSearch(val);
         }
     });
 
@@ -314,33 +416,9 @@ async function loadData() {
         });
 
         buildAliasEditor();
-        buildSearchIndex(); 
         populateInitialFilters(); 
-    } catch(e) { showPlaceholder('⚠️ 無法載入資料'); }
-}
-
-function buildSearchIndex() {
-    uniqueBoxes.forEach(box => {
-        const matches = db.filter(d => d.id === box.id);
-        const hallInfo = CONFIG.HALL_MAP[box.hall];
-        
-        let rawStr = [
-            box.id, 
-            box.hall, 
-            hallInfo ? hallInfo.short : '', 
-            hallInfo ? hallInfo.name : '', 
-            box._floor, 
-            box._exactLoc
-        ];
-        
-        matches.forEach(m => {
-            rawStr.push(m.sys);
-            if (aliases[m.sys]) rawStr.push(aliases[m.sys]); 
-            rawStr.push(m.dest, m.room, m.conn, m.rack, m.dev);
-        });
-
-        box._searchIndex = rawStr.join(' ').toUpperCase().replace(/[\n\r\t\/、，,\-]/g, ' ').replace(/\s+/g, ' ');
-    });
+        buildSearchIndex();
+    } catch(e) { showPlaceholder('⚠️ 無法載入資料，請確認網路連線'); }
 }
 
 function populateInitialFilters() {
@@ -457,34 +535,40 @@ function triggerSearch(id) {
 }
 
 function handleMainInput() {
-    let rawVal = getEle('searchInput').value.trim().toUpperCase();
-    if (!rawVal) return getEle('suggestions').style.display = 'none';
-    
-    let idVal = '';
-    if (/^\d{4}$/.test(rawVal)) idVal = `AV ${rawVal.substring(0, 2)}-${rawVal.substring(2)}`;
-    else if (/^\d{2}-\d{2}/.test(rawVal)) idVal = `AV ${rawVal}`;
-    else idVal = rawVal.replace(/^AV\s*/, 'AV ').replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+    const raw = getEle('searchInput').value;
+    const val = normalizeSearchInput(raw);
 
-    const searchStr = rawVal.replace(/[\n\r\t\/、，,\-]/g, ' ').replace(/\s+/g, ' ');
-    const tokens = searchStr.split(' ').filter(Boolean);
+    if (!val) return getEle('suggestions').style.display = 'none';
     
-    const sugs = uniqueBoxes.filter(d => {
-        if (idVal && d.id.includes(idVal)) return true;
-        if (tokens.length > 0 && tokens.every(t => d._searchIndex.includes(t))) return true;
-        return false;
-    }).slice(0, CONFIG.MAX_SUGGESTIONS);
-    
+    if (isIdLike(val)) {
+        const searchRegex = new RegExp(escapeRegExp(val).replace(/\s+/g, '\\s*'), 'i');
+        const sugs = uniqueBoxes.filter(d => searchRegex.test(d.id)).slice(0, CONFIG.MAX_SUGGESTIONS);
+        if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
+        
+        getEle('suggestions').innerHTML = sugs.map(d => {
+            const hallInfo = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
+            const matches = db.filter(m => m.id === d.id);
+            const uniqueLocs = [...new Set(matches.map(m => m.loc?.trim()).filter(Boolean))].join(' / ') || '未標示位置';
+            
+            return `<div class="sug-item" data-id="${escHtml(d.id)}">
+                <div class="sug-header"><span style="font-weight:600; color:var(--text-main);">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hallInfo.color}25; color:${hallInfo.color}">${escHtml(hallInfo.short)}</span></div>
+                <div class="sug-loc">📍 ${escHtml(uniqueLocs)}</div>
+            </div>`;
+        }).join('');
+        getEle('suggestions').style.display = 'block';
+        return;
+    }
+
+    const sugs = fuzzyMatchIds(raw).slice(0, CONFIG.MAX_SUGGESTIONS);
     if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
     
     getEle('suggestions').innerHTML = sugs.map(d => {
         const hallInfo = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
-        
-        // 【V9 新增：聚合該迴路盒的所有位置，並顯示在選單中】
         const matches = db.filter(m => m.id === d.id);
         const uniqueLocs = [...new Set(matches.map(m => m.loc?.trim()).filter(Boolean))].join(' / ') || '未標示位置';
 
         return `<div class="sug-item" data-id="${escHtml(d.id)}">
-            <div class="sug-header"><span style="font-weight:600">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hallInfo.color}22; color:${hallInfo.color}">${escHtml(hallInfo.short)}</span></div>
+            <div class="sug-header"><span style="font-weight:600; color:var(--text-main);">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hallInfo.color}25; color:${hallInfo.color}">${escHtml(hallInfo.short)}</span></div>
             <div class="sug-loc">📍 ${escHtml(uniqueLocs)}</div>
         </div>`;
     }).join('');
@@ -521,8 +605,8 @@ function renderResult(id) {
             <div class="tag">SYSTEM SCAN OK</div>
             <div class="id-label">${escHtml(first.id)}</div><hr class="divider">
             <div class="info-grid">
-                <div class="info-item"><div class="label">廳別</div><div class="value"><span class="hall-badge" style="background:${hallInfo.color}22;color:${hallInfo.color}">${escHtml(hallInfo.short)}</span><span style="font-size:16px;font-weight:500">${escHtml(hallInfo.name)}</span></div></div>
-                <div class="info-item"><div class="label">位置</div><div class="value" style="font-size:16px; word-break:break-word;">${escHtml(uniqueLocs)}</div></div>
+                <div class="info-item"><div class="label">廳別</div><div class="value"><span class="hall-badge" style="background:${hallInfo.color}25;color:${hallInfo.color}">${escHtml(hallInfo.short)}</span><span style="font-size:16px;font-weight:500; color:var(--text-main);">${escHtml(hallInfo.name)}</span></div></div>
+                <div class="info-item"><div class="label">位置</div><div class="value" style="font-size:16px; word-break:break-word; color:var(--text-main);">${escHtml(uniqueLocs)}</div></div>
             </div>
         </div>
         <div class="card"><p class="section-title">接口清單 / INTERFACE LIST</p>
@@ -552,10 +636,7 @@ function saveAliases() {
     
     try {
         localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(aliases));
-        
-        // 重建索引：讓新設定的馬甲立刻生效！
         buildSearchIndex();
-        
         btn.innerText = '✅ 已儲存'; 
         btn.style.background = 'var(--green)';
         setTimeout(() => { btn.innerText = '儲存'; btn.style.background = 'var(--blue)'; getEle('settingsArea').style.display = 'none'; }, 800);
