@@ -3,29 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V9.1 Pro (UI/UX Refined)</title>
+    <title>AV 迴路盒查詢 | V9.2 Pro (UI/UX Refined)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* ── 核心色彩系統 (UI 重構重點) ── */
+        /* ── 核心色彩系統 ── */
         :root {
             --bg:          #000000;
-            --card:        #151517; /* 更有質感的深曜灰 */
-            --card-border: rgba(255, 255, 255, 0.12); /* 提升卡片邊緣對比 */
+            --card:        #151517; 
+            --card-border: rgba(255, 255, 255, 0.12); 
             --blue:        #0A84FF;
             --blue-glow:   rgba(10, 132, 255, 0.25);
             --green:       #32D74B;
             
-            --text-main:   #FFFFFF; /* 純白，主視覺 */
-            --text-sub:    #A1A1A8; /* 提亮後的次要灰 (原 #8E8E93) */
-            --text-mute:   #C7C7CC; /* 用於清單內文補充，比 sub 更亮一點 */
+            --text-main:   #FFFFFF; 
+            --text-sub:    #A1A1A8; 
+            --text-mute:   #C7C7CC; 
             
-            --border:      rgba(255,255,255,0.18); /* 提升所有邊框的可見度 */
-            --sep:         rgba(255,255,255,0.08); /* 分隔線 */
-            --input-bg:    rgba(255,255,255,0.08); /* 輸入框底色 */
+            --border:      rgba(255,255,255,0.18); 
+            --sep:         rgba(255,255,255,0.08); 
+            --input-bg:    rgba(255,255,255,0.08); 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,10 +43,16 @@
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; text-align: center;
         }
+        /* 【修改】標題改為純白色 */
         .header h1 {
-            font-size: 26px; font-weight: 700; background: linear-gradient(180deg,#FFFFFF 0%,#A1A1A8 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 18px;
-            letter-spacing: 0.02em;
+            font-size: 26px; font-weight: 700; color: #FFFFFF;
+            margin-bottom: 4px; letter-spacing: 0.02em;
+        }
+        /* 【新增】版本號標籤樣式 */
+        .version-label {
+            font-size: 11px; font-weight: 600; color: var(--blue);
+            letter-spacing: 0.15em; margin-bottom: 16px;
+            opacity: 0.8;
         }
 
         /* ── Search Group ── */
@@ -60,7 +66,6 @@
             outline: none; transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
             box-shadow: inset 0 0 0 0.5px var(--border);
         }
-        /* 輸入框焦點光暈特效 */
         .search-wrap input:focus { 
             background: rgba(255,255,255,0.12); 
             border-color: var(--blue);
@@ -89,6 +94,9 @@
         }
         .filter-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-sub); font-weight: 600; letter-spacing: 0.08em; margin-bottom: 12px; padding: 0 4px; }
         .clear-filter-btn { color: var(--blue); background: none; border: none; font-size: 12px; font-weight: 600; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; }
+        .filter-actions { display: flex; align-items: center; gap: 8px; }
+        .filter-count { font-size: 11px; color: var(--text-mute); }
+        .filter-hint { font-size: 11px; color: var(--text-sub); margin-top: 8px; padding: 0 4px; }
         .clear-filter-btn:active { background: rgba(10, 132, 255, 0.15); }
         
         .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -148,7 +156,7 @@
         .info-item .value { font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--text-main); }
         .hall-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 16px; font-weight: 700; margin-right: 8px; }
 
-        /* ── Table (重構閱讀體驗) ── */
+        /* ── Table ── */
         .section-title { font-size: 12px; color: var(--text-sub); font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         thead th { 
@@ -182,6 +190,8 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
+    <div class="version-label">V9.2 PRO</div>
+    
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
@@ -195,7 +205,10 @@
         <div class="filter-panel">
             <div class="filter-header">
                 <span>📍 空間與條件過濾器</span>
-                <button class="clear-filter-btn" id="clearFilterBtn">重置條件</button>
+                <div class="filter-actions">
+                    <span id="filterCount" class="filter-count"></span>
+                    <button class="clear-filter-btn" id="clearFilterBtn">重置條件</button>
+                </div>
             </div>
             <div class="filter-grid">
                 <select id="selHall" class="filter-select"><option value="">🏛️ 廳別</option></select>
@@ -203,6 +216,7 @@
                 <select id="selLoc" class="filter-select"><option value="">🎯 位置</option></select>
                 <input type="text" id="selKeyword" class="filter-input" placeholder="🔍 指定條件 (接頭/線材)" autocomplete="off">
             </div>
+            <div class="filter-hint">多條件請用空白分隔（AND）</div>
             <div id="filterIdChips" class="id-chips-container"></div>
         </div>
     </div>
@@ -300,6 +314,20 @@ function buildSearchIndex() {
         map.set(id, (map.get(id) || '') + norm);
     });
     idSearchIndex = map;
+
+    uniqueBoxes.forEach(box => {
+        if (!map.has(box.id)) {
+            const fallback = normalizeForMatch([
+                box.id,
+                box.hall,
+                CONFIG.HALL_MAP[box.hall]?.short || '',
+                box._floor || '',
+                box._exactLoc || ''
+            ].join(' '));
+            map.set(box.id, fallback);
+        }
+        box._searchIndex = map.get(box.id) || '';
+    });
 }
 
 function fuzzyMatchIds(query) {
@@ -399,7 +427,6 @@ async function loadData() {
                 }
             }
 
-            // 【V9 防彈升級】無論是 05-61 還是 5-61，強制收編至 5MF
             if (/0?5\s*[-_.]\s*6[1-6]/i.test(stdId)) {
                 floor = '5MF';
             }
@@ -467,7 +494,8 @@ function updateFilters(e) {
     let h = getEle('selHall').value;
     let f = getEle('selFloor').value;
     let l = getEle('selLoc').value;
-    let k = getEle('selKeyword').value.trim().toUpperCase(); 
+    const kRaw = getEle('selKeyword').value;
+    const kTokens = tokenizeQuery(kRaw);
     
     const triggerId = e ? e.target.id : null;
 
@@ -497,13 +525,17 @@ function updateFilters(e) {
         if (f && d._floor !== f) return false;
         if (l && d._exactLoc !== l) return false;
         
-        if (k) {
-            const tokens = k.replace(/[\n\r\t\/、，,\-]/g, ' ').replace(/\s+/g, ' ').split(' ').filter(Boolean);
-            if (!tokens.every(t => d._searchIndex.includes(t))) return false;
+        if (kTokens.length) {
+            const idx = d._searchIndex || '';
+            if (!kTokens.every(t => idx.includes(t))) return false;
         }
         
         return true;
     });
+
+    const hasFilter = Boolean(h || f || l || kTokens.length);
+    const countEl = getEle('filterCount');
+    if (countEl) countEl.textContent = hasFilter ? `符合 ${filteredBoxes.length} 筆` : '';
 
     if (!h) updateDropdownOptions('selHall', filteredBoxes.map(d => d.hall));
     if (!f) updateDropdownOptions('selFloor', filteredBoxes.map(d => d._floor));
@@ -512,7 +544,7 @@ function updateFilters(e) {
     const chipBox = getEle('filterIdChips');
     if (filteredBoxes.length === 0) {
         chipBox.innerHTML = '<div class="chip-empty-msg">⚠️ 無符合條件的迴路盒</div>';
-    } else if (!h && !f && !l && !k) {
+    } else if (!h && !f && !l && !kTokens.length) {
         chipBox.innerHTML = ''; 
     } else {
         chipBox.innerHTML = filteredBoxes
@@ -526,6 +558,8 @@ function resetFilters() {
     ['selHall', 'selFloor', 'selLoc', 'selKeyword'].forEach(id => getEle(id).value = '');
     populateInitialFilters(); 
     getEle('filterIdChips').innerHTML = ''; 
+    const countEl = getEle('filterCount');
+    if (countEl) countEl.textContent = '';
 }
 
 function triggerSearch(id) {
