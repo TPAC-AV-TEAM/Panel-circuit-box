@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V6 Pro Cascading</title>
- // 加入下拉搜尋
+    <title>AV 迴路盒查詢 | V6.2 Pro</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -75,7 +74,7 @@
         }
         .icon-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.96); }
 
-        /* ── Advanced Faceted Filters (V6 新增) ── */
+        /* ── Advanced Faceted Filters ── */
         .filter-panel {
             background: rgba(255,255,255,0.03); border: 1px solid var(--border);
             border-radius: 14px; padding: 12px; width: 100%;
@@ -98,9 +97,8 @@
             transition: border-color 0.2s;
         }
         select.filter-select:focus { border-color: var(--blue); }
-        select.filter-select:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ── ID Chips Wall (V6 新增) ── */
+        /* ── ID Chips Wall ── */
         .id-chips-container {
             margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--sep);
             display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto;
@@ -116,7 +114,7 @@
         @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
         .chip-empty-msg { width: 100%; text-align: center; font-size: 12px; color: var(--sub); padding: 8px 0; }
 
-        /* ── Suggestions (Main Search) ── */
+        /* ── Suggestions ── */
         .suggestions {
             position: absolute; top: calc(100% + 6px); left: 0; right: 0;
             background: rgba(28,28,30,0.99); border: 0.5px solid var(--border);
@@ -213,27 +211,24 @@
 </div>
 
 <script>
-/**
- * 中央配置 (CENTRAL CONFIG)
- */
 const CONFIG = {
     DATA_URL: './data.json',
     STORAGE_KEY: 'avAliases',
     MAX_SUGGESTIONS: 15,
     HALL_MAP: {
-        '大劇院': { short:'GT', color:'#FF3B30' },
-        '多形式中劇院': { short:'BB', color:'#5AC8FA' },
-        '鏡框式中劇院': { short:'GP', color:'#34C759' },
-        '偶劇院': { short:'PT', color:'#FF9F0A' },
-        '屋頂劇場': { short:'RT', color:'#BF5AF2' },
-        '排練室': { short:'練', color:'#64D2FF' },
-        '公共區域': { short:'公共', color:'#8E8E93' },
-        '卸貨口與外部空間': { short:'外部', color:'#636366' },
+        '大劇院':       { name: 'GT 大劇院',   short: 'GT', color: '#FF3B30' },
+        '多形式中劇院': { name: 'BB 藍盒子',   short: 'BB', color: '#5AC8FA' },
+        '鏡框式中劇院': { name: 'GP 球劇場',   short: 'GP', color: '#34C759' },
+        '偶劇院':       { name: 'PT 偶劇院',   short: 'PT', color: '#FF9F0A' },
+        '屋頂劇場':     { name: 'RT 屋頂劇場', short: 'RT', color: '#BF5AF2' },
+        '排練室':       { name: '排練室',     short: '練', color: '#64D2FF' },
+        '公共區域':     { name: '公共區域',   short: '公共', color: '#8E8E93' },
+        '卸貨口與外部空間': { name: '外部空間', short: '外部', color: '#636366' },
     }
 };
 
 let db = [];
-let uniqueBoxes = []; // 儲存唯一迴路盒清單(供過濾器使用)
+let uniqueBoxes = []; 
 let aliases = {};
 let currentId = null;
 
@@ -255,12 +250,11 @@ function bindEvents() {
     getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
     getEle('saveBtn').addEventListener('click', saveAliases);
 
-    // 綁定三個下拉選單的聯動事件
+    // 傳入 e (Event) 以便追蹤是哪個欄位觸發了變更
     ['selHall', 'selFloor', 'selLoc'].forEach(id => {
         getEle(id).addEventListener('change', updateFilters);
     });
 
-    // Event Delegation (處理動態產生的 Chips 與 Sug Items)
     document.addEventListener('click', e => {
         const sug = e.target.closest('.sug-item');
         if (sug && sug.dataset.id) return triggerSearch(sug.dataset.id);
@@ -277,31 +271,20 @@ async function loadData() {
         const res = await fetch(`${CONFIG.DATA_URL}?v=${Date.now()}`);
         const rawDb = await res.json();
         
-        // 【核心架構：資料清洗與正規化】
-        // 在不改動原始 JSON 的前提下，動態為每個物件補上 _floor 與 _exactLoc
         db = rawDb.map(d => {
             let floor = '';
             let exactLoc = (d.loc || '').trim();
-            
-            // 策略 1: 從 loc 字串中萃取樓層 (例如 "B1F 設備室" -> "B1F")
             const floorMatch = exactLoc.match(/\b(B?\d{1,2}F)\b/i);
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
-                exactLoc = exactLoc.replace(floorMatch[0], '').trim(); // 移除樓層，留下純位置
+                exactLoc = exactLoc.replace(floorMatch[0], '').trim(); 
             } else {
-                // 策略 2: 若 loc 沒有樓層，從 ID 萃取 (例如 "AV 04-01" -> "4F")
                 const idMatch = (d.id || '').match(/^AV\s*(\d{2})/i);
                 if (idMatch) floor = parseInt(idMatch[1], 10) + 'F';
             }
-
-            return { 
-                ...d, 
-                _floor: floor || '未知樓層', 
-                _exactLoc: exactLoc || '一般區域'
-            };
+            return { ...d, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
         });
 
-        // 建立唯一迴路盒清單，避免按鈕牆重複渲染
         const seenIds = new Set();
         uniqueBoxes = db.filter(d => {
             if (!d.id || seenIds.has(d.id)) return false;
@@ -309,14 +292,10 @@ async function loadData() {
         });
 
         buildAliasEditor();
-        populateInitialFilters(); // 初始化下拉選單
-    } catch(e) {
-        console.error(e);
-        showPlaceholder('⚠️ 無法載入資料');
-    }
+        populateInitialFilters(); 
+    } catch(e) { showPlaceholder('⚠️ 無法載入資料'); }
 }
 
-/* ── 聯動過濾器邏輯 (Cascading Logic) ── */
 function populateInitialFilters() {
     updateDropdownOptions('selHall', uniqueBoxes.map(d => d.hall));
     updateDropdownOptions('selFloor', uniqueBoxes.map(d => d._floor));
@@ -326,26 +305,51 @@ function populateInitialFilters() {
 function updateDropdownOptions(selectId, dataArray) {
     const sel = getEle(selectId);
     const currentVal = sel.value;
-    const defaultText = sel.options[0].text; // 保留如 "🏛️ 廳別"
-    
-    // 取得不重複且非空的值，並排序
+    const defaultText = sel.options[0].text; 
     const uniqueVals = [...new Set(dataArray.filter(Boolean))].sort();
     
     sel.innerHTML = `<option value="">${defaultText}</option>` + 
-        uniqueVals.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+        uniqueVals.map(v => {
+            let displayValue = selectId === 'selHall' ? (CONFIG.HALL_MAP[v]?.name || v) : v;
+            return `<option value="${escHtml(v)}">${escHtml(displayValue)}</option>`;
+        }).join('');
     
-    // 試著還原原本選中的值
     if (uniqueVals.includes(currentVal)) sel.value = currentVal;
 }
 
-function updateFilters() {
-    const h = getEle('selHall').value;
-    const f = getEle('selFloor').value;
-    const l = getEle('selLoc').value;
+function updateFilters(e) {
+    let h = getEle('selHall').value;
+    let f = getEle('selFloor').value;
+    let l = getEle('selLoc').value;
+    
+    const triggerId = e ? e.target.id : null;
 
-    getEle('suggestions').style.display = 'none'; // 隱藏主搜尋建議
+    // 【狀態衝突自癒機制】檢查其他未動過的欄位是否依然合法，不合法則自動清空
+    if (triggerId === 'selHall') {
+        const validF = uniqueBoxes.filter(d => d.hall === h).map(d => d._floor);
+        if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
+        
+        const validL = uniqueBoxes.filter(d => d.hall === h && (!f || d._floor === f)).map(d => d._exactLoc);
+        if (l && !validL.includes(l)) { l = ''; getEle('selLoc').value = ''; }
+    } 
+    else if (triggerId === 'selFloor') {
+        const validH = uniqueBoxes.filter(d => d._floor === f).map(d => d.hall);
+        if (h && !validH.includes(h)) { h = ''; getEle('selHall').value = ''; }
+        
+        const validL = uniqueBoxes.filter(d => d._floor === f && (!h || d.hall === h)).map(d => d._exactLoc);
+        if (l && !validL.includes(l)) { l = ''; getEle('selLoc').value = ''; }
+    } 
+    else if (triggerId === 'selLoc') {
+        const validH = uniqueBoxes.filter(d => d._exactLoc === l).map(d => d.hall);
+        if (h && !validH.includes(h)) { h = ''; getEle('selHall').value = ''; }
+        
+        const validF = uniqueBoxes.filter(d => d._exactLoc === l && (!h || d.hall === h)).map(d => d._floor);
+        if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
+    }
 
-    // 1. 根據條件過濾出符合的「迴路盒」
+    getEle('suggestions').style.display = 'none';
+
+    // 以修復後的乾淨狀態，重新篩選資料庫
     let filteredBoxes = uniqueBoxes.filter(d => {
         if (h && d.hall !== h) return false;
         if (f && d._floor !== f) return false;
@@ -353,18 +357,16 @@ function updateFilters() {
         return true;
     });
 
-    // 2. 動態收斂其他選單的選項 (Faceted)
-    // 確保只顯示「在目前過濾條件下，真實存在的選項」
+    // 動態收斂另外兩個下拉選單的選項
     if (!h) updateDropdownOptions('selHall', filteredBoxes.map(d => d.hall));
     if (!f) updateDropdownOptions('selFloor', filteredBoxes.map(d => d._floor));
     if (!l) updateDropdownOptions('selLoc', filteredBoxes.map(d => d._exactLoc));
 
-    // 3. 渲染按鈕牆
+    // 渲染按鈕牆
     const chipBox = getEle('filterIdChips');
     if (filteredBoxes.length === 0) {
         chipBox.innerHTML = '<div class="chip-empty-msg">⚠️ 無符合條件的迴路盒</div>';
     } else if (!h && !f && !l) {
-        // 如果條件全空，不顯示滿滿的按鈕，保持介面乾淨
         chipBox.innerHTML = ''; 
     } else {
         chipBox.innerHTML = filteredBoxes
@@ -376,8 +378,8 @@ function updateFilters() {
 
 function resetFilters() {
     ['selHall', 'selFloor', 'selLoc'].forEach(id => getEle(id).value = '');
-    populateInitialFilters(); // 恢復全部選項
-    getEle('filterIdChips').innerHTML = ''; // 清空按鈕
+    populateInitialFilters(); 
+    getEle('filterIdChips').innerHTML = ''; 
 }
 
 function triggerSearch(id) {
@@ -386,19 +388,17 @@ function triggerSearch(id) {
     renderResult(id);
 }
 
-/* ── 主搜尋與渲染 (與 V5 相容) ── */
 function handleMainInput() {
     const val = getEle('searchInput').value.trim().toUpperCase();
     if (!val) return getEle('suggestions').style.display = 'none';
     
     const sugs = uniqueBoxes.filter(d => d.id.toUpperCase().includes(val)).slice(0, CONFIG.MAX_SUGGESTIONS);
-    
     if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
     
     getEle('suggestions').innerHTML = sugs.map(d => {
-        const hall = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
+        const hallInfo = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
         return `<div class="sug-item" data-id="${escHtml(d.id)}">
-            <div class="sug-header"><span style="font-weight:600">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hall.color}22; color:${hall.color}">${escHtml(hall.short)}</span></div>
+            <div class="sug-header"><span style="font-weight:600">${escHtml(d.id)}</span><span class="sug-hall" style="background:${hallInfo.color}22; color:${hallInfo.color}">${escHtml(hallInfo.short)}</span></div>
         </div>`;
     }).join('');
     getEle('suggestions').style.display = 'block';
@@ -411,7 +411,7 @@ function renderResult(id) {
     
     currentId = id; 
     const first = matches[0];
-    const hall = CONFIG.HALL_MAP[first.hall] || { short: first.hall || '?', color: '#8E8E93' };
+    const hallInfo = CONFIG.HALL_MAP[first.hall] || { name: first.hall || '—', short: '?', color: '#8E8E93' };
 
     const groups = new Map();
     matches.forEach(d => {
@@ -432,7 +432,7 @@ function renderResult(id) {
             <div class="tag">SYSTEM SCAN OK</div>
             <div class="id-label">${escHtml(first.id)}</div><hr class="divider">
             <div class="info-grid">
-                <div class="info-item"><div class="label">廳別</div><div class="value"><span class="hall-badge" style="background:${hall.color}22;color:${hall.color}">${escHtml(hall.short)}</span><span style="font-size:16px;font-weight:500">${escHtml(first.hall||'—')}</span></div></div>
+                <div class="info-item"><div class="label">廳別</div><div class="value"><span class="hall-badge" style="background:${hallInfo.color}22;color:${hallInfo.color}">${escHtml(hallInfo.short)}</span><span style="font-size:16px;font-weight:500">${escHtml(hallInfo.name)}</span></div></div>
                 <div class="info-item"><div class="label">位置</div><div class="value" style="font-size:16px">${escHtml(first.loc||'—')}</div></div>
             </div>
         </div>
