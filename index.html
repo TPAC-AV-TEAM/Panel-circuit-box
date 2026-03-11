@@ -53,6 +53,7 @@
         }
         .search-wrap input:focus { background: rgba(255,255,255,0.16); border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-glow); }
         .search-wrap input::placeholder { color: rgba(255,255,255,0.45); }
+        .search-wrap input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
 
         .icon-btn {
             width: 52px; height: 52px; background: var(--input-bg);
@@ -138,7 +139,9 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="搜尋編號、廳別、線材或接頭…" autocomplete="off">
+                <form action="javascript:void(0);" style="width:100%;margin:0;padding:0;">
+                    <input type="search" id="searchInput" placeholder="搜尋編號、廳別、線材或接頭…" autocomplete="off">
+                </form>
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -197,6 +200,24 @@ const HALL_TOKENS = new Map([
 // 樓層 token 識別 regex（修正：明確區分 B1F/1F/5MF/RF，避免誤判）
 const FLOOR_RE = /^(B\d{1,2}F?|RF|\d{1,2}F|\d{1,2}MF)$/;
 
+
+// 預設 Alias（所有裝置共用基準，localStorage 只儲存使用者自行修改的部分）
+const DEFAULT_ALIASES = {
+    'POWER 1,8 kW 1-PHASE IG 120 V/15A HOSP. GRADE': 'Power 15A / H插座',
+    'POWER 22 kW 3-PHASE 5-WIRE IG 280V/63A':        'Power 63A',
+    'POWER 3,6 kW 1-PHASE IG 120V/32A LOCKING OUTLET': 'Power twist-lock',
+    '對講系統-RJ-45':   '對講-RJ45',
+    '對講系統-XLR-3':   '對講-XLR-3',
+    '後台廣播系統-喇叭': '後台廣播-喇叭',
+    '後台系統-VC':       '後台廣播-VC',
+    '揚聲系統-NL-4':    '揚聲系統- LS',
+    '網路-RJ-45':       '網路-RJ45',
+    '視訊系統-BNC':     '視訊-BNC',
+    '視訊系統-RJ-45':   '視訊-RJ45',
+    '連接線':           '音頻-T/L',
+    '麥克風系統':       '音頻-MIC',
+};
+
 let db = [], uniqueBoxes = [], aliases = {}, currentId = null;
 let idSearchIndex = new Map();
 
@@ -207,7 +228,8 @@ const normStr = s => String(s ?? '').toUpperCase().replace(/[^A-Z0-9\u4E00-\u9FF
 const tokenize = q => String(q ?? '').split(/[\s,，、;:\/\\|]+/).map(normStr).filter(Boolean);
 
 window.addEventListener('DOMContentLoaded', async () => {
-    aliases = safeParse(localStorage.getItem(CONFIG.STORAGE_KEY), {});
+    const saved = safeParse(localStorage.getItem(CONFIG.STORAGE_KEY), {});
+    aliases = { ...DEFAULT_ALIASES, ...saved };
     bindEvents();
     await loadData();
 });
