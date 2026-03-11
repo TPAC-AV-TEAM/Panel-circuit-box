@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V10.1 Omnibox</title>
+    <title>AV 迴路盒查詢 | V10.2 Pure Omnibox</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -37,7 +37,7 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* ── Header ── */
+        /* ── Header (極簡化) ── */
         .header {
             width: 100%; padding: 60px 16px 20px; background: rgba(0,0,0,0.85);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -79,32 +79,18 @@
         }
         @media (hover: hover) { 
             .icon-btn:hover { border-color: var(--text-sub); color: var(--text-main); background: rgba(255,255,255,0.15); } 
-            .sug-item:hover { background: rgba(255,255,255,0.08); } 
-            .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); } 
+            .sug-item:hover, .list-card:hover { background: rgba(255,255,255,0.08); } 
         }
         .icon-btn:active { background: rgba(255,255,255,0.25); transform: scale(0.94); }
 
-        /* ── Chips & Results Wall ── */
-        .id-chip { 
-            background: rgba(255,255,255,0.08); border: 1px solid var(--border); 
-            border-radius: 10px; padding: 10px 16px; font-size: 15px; font-weight: 600; 
-            color: var(--text-main); cursor: pointer; transition: all 0.2s; 
-            animation: fadeInScale 0.3s ease-out forwards; opacity: 0; transform: scale(0.95); 
-        }
-        .id-chip:active { transform: scale(0.92); background: var(--blue); color: var(--text-main); border-color: var(--blue); }
-        @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
-        
-        .result-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-        .result-meta { font-size: 13px; color: var(--text-sub); margin-top: 6px; font-weight: 500; }
-
-        /* ── Suggestions ── */
+        /* ── Suggestions (下拉建議清單) ── */
         .suggestions { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: rgba(28,28,30,0.98); border: 1px solid var(--card-border); border-radius: 16px; overflow-y: auto; max-height: 45vh; box-shadow: 0 12px 48px rgba(0,0,0,0.8); z-index: 200; display: none; }
         .sug-item { padding: 14px 16px; cursor: pointer; border-bottom: 0.5px solid var(--sep); display: flex; flex-direction: column; gap: 6px; }
         .sug-header { display: flex; justify-content: space-between; align-items: center; font-size: 16px; letter-spacing: 0.02em; }
         .sug-hall { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
         .sug-loc { font-size: 13px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 4px; }
 
-        /* ── Content & Card ── */
+        /* ── Content & Card (詳情與結果牆) ── */
         .content { width: 100%; max-width: 540px; padding: 24px 16px 0; }
         .card { 
             background: var(--card); border: 1px solid var(--card-border); 
@@ -122,7 +108,20 @@
         .info-item .value { font-size: 17px; font-weight: 600; line-height: 1.4; color: var(--text-main); }
         .hall-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 16px; font-weight: 700; margin-right: 8px; }
 
-        /* ── Table ── */
+        /* ── Multi-Result List (多筆結果列表，取代按鈕牆) ── */
+        .list-results-container { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; border-top: 1px solid var(--sep); padding-top: 16px; }
+        .list-card { 
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border); 
+            border-radius: 14px; padding: 14px; cursor: pointer; transition: all 0.2s;
+            animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.98);
+        }
+        .list-card:active { transform: scale(0.96); background: rgba(255,255,255,0.1); border-color: var(--blue); }
+        @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
+        .list-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .list-card-id { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        .list-card-loc { font-size: 13px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ── Table (詳情表格) ── */
         .section-title { font-size: 12px; color: var(--text-sub); font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         thead th { 
@@ -161,12 +160,12 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V10.1 OMNIBOX</div>
+    <div class="version-label">V10.2 PURE OMNIBOX</div>
     
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="輸入編號、廳院、線材 (如: GT 4F Twist)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="搜尋編號、廳別、線材或接頭..." autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -233,6 +232,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 });
 
+// ID 格式正規化 (防呆)
 function normalizeSearchInput(rawVal) {
     let val = rawVal.trim().toUpperCase();
     if (!val) return '';
@@ -243,6 +243,7 @@ function normalizeSearchInput(rawVal) {
     return val;
 }
 
+// 建立全域搜尋隱形索引
 function buildSearchIndex() {
     const map = new Map();
     db.forEach(d => {
@@ -268,6 +269,7 @@ function buildSearchIndex() {
     idSearchIndex = map;
 }
 
+// 模糊搜尋比對邏輯
 function fuzzyMatchIds(query) {
     const tokens = tokenizeQuery(query);
     if (!tokens.length) return [];
@@ -277,89 +279,78 @@ function fuzzyMatchIds(query) {
     });
 }
 
-function renderListResults(list, query) {
-    currentId = null;
-    const ids = list.map(d => d.id).sort((a,b) => a.localeCompare(b));
-    if (!ids.length) return showPlaceholder('查無符合條件的迴路盒');
-    const chips = ids.map((id, i) => 
-        `<div class="id-chip" data-id="${escHtml(id)}" style="animation-delay:${i*0.015}s">${escHtml(id)}</div>`
-    ).join('');
-    getEle('resultArea').innerHTML = `
-        <div class="card">
-            <div class="tag">FUZZY MATCH / 全域搜尋結果</div>
-            <div class="id-label" style="font-size:24px; color:var(--text-main);">${escHtml(query)}</div>
-            <div class="result-meta">找到 ${ids.length} 筆相符資料（點選按鈕進入詳情）</div>
-            <div class="result-chips">${chips}</div>
-        </div>`;
-    getEle('resultArea').style.display = 'block';
-    getEle('placeholder').style.display = 'none';
+// 【修復核心】：確實保留觸發搜尋與渲染表格的發動機
+function triggerSearch(id) {
+    getEle('searchInput').value = id;
+    getEle('suggestions').style.display = 'none';
+    renderResult(id);
 }
 
+// 事件綁定區
 function bindEvents() {
     const searchInput = getEle('searchInput');
+    
+    // 1. 打字時觸發下拉建議清單
     searchInput.addEventListener('input', handleMainInput);
     
-    // 【核心修正】加入「直達車」邏輯，並在 Enter 後自動收起鍵盤
+    // 2. 按下 Enter 時的直達與列表邏輯
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            searchInput.blur(); // 強制收起手機鍵盤
+            searchInput.blur(); // 收起手機虛擬鍵盤
             
             const raw = searchInput.value.trim();
             if (!raw) return;
 
             getEle('suggestions').style.display = 'none';
             
-            // 1. 嘗試精準比對 ID (含格式自動補齊)
-            let exactId = raw.toUpperCase();
-            if (/^\d{4}$/.test(exactId)) exactId = `AV ${exactId.substring(0, 2)}-${exactId.substring(2)}`;
-            else if (/^\d{2}-\d{2}/.test(exactId)) exactId = `AV ${exactId}`;
-            else exactId = exactId.replace(/^AV\s*/, 'AV ').replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
-
-            // 如果資料庫內有精準吻合的 ID，直達總表
-            const exactMatch = uniqueBoxes.find(d => d.id === exactId || d.id === raw.toUpperCase());
+            // 嘗試精準配對 ID
+            const val = normalizeSearchInput(raw);
+            const exactMatch = uniqueBoxes.find(d => d.id === val || d.id === raw.toUpperCase());
             if (exactMatch) {
-                return triggerSearch(exactMatch.id);
+                return triggerSearch(exactMatch.id); // 命中唯一 ID，直達總表！
             }
             
-            // 2. 進行模糊搜尋
+            // 進行模糊搜尋
             const results = fuzzyMatchIds(raw);
             
-            // 【修復 UX 痛點】如果模糊搜尋只找到「唯一 1 筆」，不囉嗦，直接彈出總表！
             if (results.length === 1) {
-                return triggerSearch(results[0].id);
+                return triggerSearch(results[0].id); // 只找到 1 筆，直達總表！
             }
             
-            // 3. 只有當結果超過 1 筆時，才需要展開「按鈕牆」讓使用者慢慢挑
+            // 找到多筆，畫出精緻列表
             renderListResults(results, raw);
         }
     });
 
+    // 清除按鈕
     getEle('clearBtn').addEventListener('click', () => { 
         getEle('searchInput').value = ''; 
         getEle('suggestions').style.display = 'none'; 
         showPlaceholder('準備掃描 / 查詢<br><span>支援全域模糊搜尋與精準 ID 對接</span>'); 
     });
     
+    // 設定按鈕
     getEle('settingBtn').addEventListener('click', () => getEle('settingsArea').style.display = getEle('settingsArea').style.display==='none'?'block':'none');
     getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
     getEle('saveBtn').addEventListener('click', saveAliases);
 
+    // 事件委派：監聽建議清單與結果列表的點擊
     document.addEventListener('click', e => {
+        // 點擊下拉建議清單
         const sug = e.target.closest('.sug-item');
-        if (sug && sug.dataset.id) {
-            getEle('searchInput').value = sug.dataset.id;
-            getEle('suggestions').style.display = 'none';
-            return triggerSearch(sug.dataset.id);
-        }
+        if (sug && sug.dataset.id) return triggerSearch(sug.dataset.id);
 
-        const chip = e.target.closest('.id-chip');
-        if (chip && chip.dataset.id) return triggerSearch(chip.dataset.id);
+        // 點擊多筆結果列表卡片
+        const listCard = e.target.closest('.list-card');
+        if (listCard && listCard.dataset.id) return triggerSearch(listCard.dataset.id);
 
+        // 點擊畫面其他地方收起建議清單
         if (!e.target.closest('.search-wrap')) getEle('suggestions').style.display = 'none';
     });
 }
 
+// 載入資料
 async function loadData() {
     try {
         const res = await fetch(`${CONFIG.DATA_URL}?v=${Date.now()}`);
@@ -372,15 +363,13 @@ async function loadData() {
             let exactLoc = (d.loc || '').trim();
             
             const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
-            
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
                 exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
                 const roomMatch = exactLoc.match(/^0?(\d{1,2})\.\d{2}/);
-                if (roomMatch) {
-                    floor = roomMatch[1] + 'F';
-                } else {
+                if (roomMatch) floor = roomMatch[1] + 'F';
+                else {
                     const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
                     if (idMatch) floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
                 }
@@ -403,6 +392,7 @@ async function loadData() {
     } catch(e) { showPlaceholder('⚠️ 無法載入資料，請確認網路連線'); }
 }
 
+// 處理打字時的下拉建議清單
 function handleMainInput() {
     const raw = getEle('searchInput').value;
     if (!raw.trim()) return getEle('suggestions').style.display = 'none';
@@ -410,6 +400,7 @@ function handleMainInput() {
     let sugs = fuzzyMatchIds(raw);
     const cleanRaw = raw.replace(/[^A-Z0-9]/ig, '').toUpperCase();
 
+    // 權重排序：避免搜尋汙染
     sugs.sort((a, b) => {
         const aIdClean = a.id.replace(/[^A-Z0-9]/ig, '');
         const bIdClean = b.id.replace(/[^A-Z0-9]/ig, '');
@@ -438,6 +429,39 @@ function handleMainInput() {
     getEle('suggestions').style.display = 'block';
 }
 
+// 【全新設計】當 Enter 找到多筆時，顯示包含「廳院/位置」的精緻列表
+function renderListResults(list, query) {
+    currentId = null;
+    if (!list.length) return showPlaceholder('查無符合條件的迴路盒');
+    
+    // 將多筆結果轉化為包含廳院位置的卡片列表
+    const itemsHtml = list.map((d, i) => {
+        const hallInfo = CONFIG.HALL_MAP[d.hall] || { short: d.hall||'?', color: '#8E8E93' };
+        const matches = db.filter(m => m.id === d.id);
+        const uniqueLocs = [...new Set(matches.map(m => m.loc?.trim()).filter(Boolean))].join(' / ') || '未標示位置';
+        
+        return `
+        <div class="list-card" data-id="${escHtml(d.id)}" style="animation-delay:${i*0.02}s">
+            <div class="list-card-header">
+                <span class="list-card-id">${escHtml(d.id)}</span>
+                <span class="sug-hall" style="background:${hallInfo.color}25;color:${hallInfo.color}">${escHtml(hallInfo.short)}</span>
+            </div>
+            <div class="list-card-loc">📍 ${escHtml(uniqueLocs)}</div>
+        </div>`;
+    }).join('');
+
+    getEle('resultArea').innerHTML = `
+        <div class="card">
+            <div class="tag">多筆相符結果</div>
+            <div class="id-label" style="font-size:24px; color:var(--text-main);">${escHtml(query)}</div>
+            <div style="font-size: 13px; color: var(--text-sub); margin-top: 6px;">找到 ${list.length} 筆資料（點選進入詳情）</div>
+            <div class="list-results-container">${itemsHtml}</div>
+        </div>`;
+    getEle('resultArea').style.display = 'block';
+    getEle('placeholder').style.display = 'none';
+}
+
+// 渲染最終的單一迴路盒表格詳情
 function renderResult(id) {
     if (!id) return;
     const matches = db.filter(d => d.id === id);
@@ -446,7 +470,6 @@ function renderResult(id) {
     currentId = id; 
     const first = matches[0];
     const hallInfo = CONFIG.HALL_MAP[first.hall] || { name: first.hall || '—', short: '?', color: '#8E8E93' };
-
     const uniqueLocs = [...new Set(matches.map(d => d.loc?.trim()).filter(Boolean))].join(' / ') || '—';
 
     const groups = new Map();
@@ -485,7 +508,7 @@ function buildAliasEditor() {
     getEle('aliasList').innerHTML = sysNames.map(s => `
         <div class="alias-row">
             <span class="alias-orig">${escHtml(s)}</span>
-            <input class="alias-input" data-orig="${encodeURIComponent(s)}" value="${escHtml(aliases[s]||'')}" placeholder="自訂">
+            <input class="alias-input" data-orig="${encodeURIComponent(s)}\" value="${escHtml(aliases[s]||'')}" placeholder="自訂">
         </div>`).join('');
 }
 
@@ -504,7 +527,7 @@ function saveAliases() {
         btn.style.background = 'var(--green)';
         setTimeout(() => { btn.innerText = '儲存'; btn.style.background = 'var(--blue)'; getEle('settingsArea').style.display = 'none'; }, 800);
         if(currentId) renderResult(currentId); 
-    } catch(e) { alert('儲存失敗：請確認是否開啟了無痕模式，或裝置儲存空間已滿。'); }
+    } catch(e) { alert('儲存失敗：請確認儲存空間。'); }
 }
 </script>
 </body>
