@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V11.2 Data Cleaned</title>
+    <title>AV 迴路盒查詢 | V11.3</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -106,7 +106,6 @@
         .list-card-id { font-size: 18px; font-weight: 600; }
         .list-card-loc { font-size: 13px; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* ── Table & Category Colors ── */
         .section-title { font-size: 12px; color: var(--text-sub); font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         thead th { text-align: left; font-size: 13px; color: var(--text-sub); font-weight: 600; padding: 0 4px 10px; border-bottom: 1px solid var(--border); }
@@ -115,13 +114,15 @@
         thead th:nth-child(3) { width: 15%; text-align: right; }
         tbody tr.data-row { border-bottom: 1px solid var(--sep); }
         tbody td { padding: 14px 4px; font-size: 16px; font-weight: 500; vertical-align: top; word-wrap: break-word; }
-        tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; }
         
+        /* 【UI 微調】讓接頭欄位變成灰色輔助字體 */
+        tbody td:nth-child(2) { color: var(--text-sub); font-size: 14.5px; font-weight: 400; }
+        
+        tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; }
         .sys-name { font-weight: 600; line-height: 1.4; transition: color 0.2s; }
         .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
         .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; opacity: 0.6; }
 
-        /* ── UX Placeholder Card ── */
         .placeholder-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; animation: fadeIn 0.4s ease-out; width: 100%; max-width: 540px; margin: 0 auto; }
         .ph-icon { font-size: 42px; margin-bottom: 16px; opacity: 0.9; }
         .ph-title { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 24px; letter-spacing: 0.05em; }
@@ -131,7 +132,6 @@
         .ph-item span { color: var(--text-sub); display: inline-block; width: 85px; flex-shrink: 0; font-weight: 500; }
         .ph-hint { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--sep); font-size: 13px; color: var(--text-mute); line-height: 1.5; }
 
-        /* ── Settings ── */
         .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .save-btn { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .close-settings { background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 10px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -145,7 +145,7 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V11.2 DATA CLEANED</div>
+    <div class="version-label">V11.3</div>
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
@@ -233,19 +233,25 @@ const tokenize = q => String(q ?? '').split(/[\s,，、;:\/\\|]+/).map(normStr).
 window.addEventListener('DOMContentLoaded', async () => {
     const saved = safeParse(localStorage.getItem(CONFIG.STORAGE_KEY), {});
     aliases = { ...DEFAULT_ALIASES, ...saved };
-    showPlaceholder(); 
+    showPlaceholder();
     bindEvents();
     await loadData();
 });
 
+// 【邏輯升級】加入 order 權重，確保「揚聲(35)」排在「音頻(30)」之後
 function getSysCategory(sysName) {
-    const upperSys = String(sysName).toUpperCase();
-    if (upperSys.includes('POWER') || upperSys.includes('電源') || upperSys.includes('KW')) return { type: 'POWER', color: '#FF453A' }; 
-    if (upperSys.includes('光纖')) return { type: 'FIBER', color: '#0A84FF' }; 
-    if (upperSys.includes('音頻') || upperSys.includes('麥克風') || upperSys.includes('揚聲') || upperSys.includes('廣播')) return { type: 'AUDIO', color: '#32D74B' }; 
-    if (upperSys.includes('視訊')) return { type: 'VIDEO', color: '#FF9F0A' }; 
-    if (upperSys.includes('網路') || upperSys.includes('對講') || upperSys.includes('RJ')) return { type: 'NETWORK', color: '#BF5AF2' }; 
-    return { type: 'OTHER', color: '#FFFFFF' }; 
+    const s = String(sysName).toUpperCase();
+    if (s.includes('POWER') || s.includes('電源') || s.includes('KW')) return { type: 'POWER', color: '#FF453A', order: 10 };
+    if (s.includes('光纖'))                                            return { type: 'FIBER', color: '#0A84FF', order: 20 };
+    
+    // 將「揚聲」獨立判斷，並賦予較大的 order 值
+    if (s.includes('揚聲'))                                            return { type: 'AUDIO', color: '#32D74B', order: 35 };
+    if (s.includes('音頻') || s.includes('麥克風') || s.includes('廣播')) return { type: 'AUDIO', color: '#32D74B', order: 30 };
+    
+    if (s.includes('視訊'))                                            return { type: 'VIDEO', color: '#FF9F0A', order: 40 };
+    if (s.includes('網路') || s.includes('對講') || s.includes('RJ'))   return { type: 'NETWORK', color: '#BF5AF2', order: 50 };
+    
+    return { type: 'OTHER', color: '#8E8E93', order: 99 };
 }
 
 function normalizeId(raw) {
@@ -345,7 +351,6 @@ function bindEvents() {
 
         const results = fuzzyMatchIds(raw);
         if (results.length === 1) return triggerSearch(results[0].id);
-        
         renderListResults(results, raw);
     });
 
@@ -376,7 +381,6 @@ async function loadData() {
         const rawDb = await fetch(`${CONFIG.DATA_URL}?v=${Date.now()}`).then(r => r.json());
 
         db = rawDb
-            // 【資料清洗】：只允許 AV 開頭或數字開頭的合法 ID，濾除 # 等干擾資料
             .filter(d => {
                 const rawId = (d.id || '').trim().toUpperCase();
                 return rawId.startsWith('AV') || /^\d/.test(rawId);
@@ -419,7 +423,8 @@ async function loadData() {
 function renderListResults(list, query) {
     currentId = null;
     if (!list.length) {
-        showPlaceholder();
+        getEle('resultArea').style.display = 'none';
+        getEle('placeholderContainer').style.display = 'block';
         getEle('placeholderContainer').innerHTML = `<div class="placeholder-wrap"><div class="ph-icon">👻</div><div class="ph-title">查無相符資料</div><div class="ph-hint">找不到符合「${escHtml(query)}」的迴路盒，請嘗試更換關鍵字。</div></div>`;
         return;
     }
@@ -467,29 +472,35 @@ function renderResult(id) {
         groups.get(key).qty += parseInt(d.qty, 10) || 0;
     });
 
-    const sortedGroups = [...groups.values()].sort((a,b) => a.sys.localeCompare(b.sys,'zh-TW'));
-    
+    // 【邏輯升級】套用 order 權重進行雙重排序：先比權重，再比字母
+    const sortedGroups = [...groups.values()].sort((a,b) => {
+        const catA = getSysCategory(a.sys);
+        const catB = getSysCategory(b.sys);
+        if (catA.order !== catB.order) return catA.order - catB.order;
+        return a.sys.localeCompare(b.sys, 'zh-TW');
+    });
+
     let lastSysType = null;
     let rowsHtml = '';
 
     sortedGroups.forEach(g => {
-        const catInfo = getSysCategory(g.sys);
+        const cat = getSysCategory(g.sys);
         
-        const isNewCategory = lastSysType !== null && lastSysType !== catInfo.type;
-        if (isNewCategory) {
-            rowsHtml += `<tr style="border: none;"><td colspan="3" style="height: 18px; padding: 0;"></td></tr>`;
+        // 分類斷點：只保留空白 tr，移除舊有的 border-top (修復 Bug 3)
+        if (lastSysType !== null && lastSysType !== cat.type) {
+            rowsHtml += `<tr style="border:none;"><td colspan="3" style="height:18px;padding:0;"></td></tr>`;
         }
         
-        rowsHtml += `<tr class="data-row" style="${isNewCategory ? 'border-top: 1px solid var(--sep);' : ''}">
-            <td style="border-left: 3px solid ${catInfo.color}; padding-left: 12px; border-radius: 2px 0 0 2px;">
-                <div class="sys-name" style="color:${catInfo.color};">${escHtml(g.sys)}</div>
-                <div class="dest-info"><span class="dest-icon" style="color:${catInfo.color}">↳</span><span>${escHtml(g.dest)}</span></div>
+        rowsHtml += `<tr class="data-row">
+            <td style="border-left:3px solid ${cat.color};padding-left:12px;border-radius:2px 0 0 2px;">
+                <div class="sys-name" style="color:${cat.color};">${escHtml(g.sys)}</div>
+                <div class="dest-info"><span class="dest-icon" style="color:${cat.color}">↳</span><span>${escHtml(g.dest)}</span></div>
             </td>
             <td>${escHtml(g.conn)}</td>
             <td>${g.qty||'0'}</td>
         </tr>`;
         
-        lastSysType = catInfo.type;
+        lastSysType = cat.type;
     });
 
     getEle('resultArea').innerHTML = `
@@ -550,15 +561,18 @@ function buildAliasEditor() {
         </div>`).join('');
 }
 
+// 【Bug 修復】確保 Session 不遺失
 function saveAliases() {
     const btn = getEle('saveBtn');
+    const userOverrides = {};
     document.querySelectorAll('.alias-input').forEach(el => {
         const v = el.value.trim();
         const orig = decodeURIComponent(el.dataset.orig);
-        if (v) aliases[orig] = v; else delete aliases[orig];
+        if (v) userOverrides[orig] = v;
     });
     try {
-        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(aliases));
+        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(userOverrides));
+        aliases = { ...DEFAULT_ALIASES, ...userOverrides };
         buildSearchIndex();
         btn.innerText = '✅ 已儲存';
         btn.style.background = 'var(--green)';
