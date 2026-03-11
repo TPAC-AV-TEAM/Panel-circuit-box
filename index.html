@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V8.0 Pro (Omnibox & 2x2 Filters)</title>
+    <title>AV 迴路盒查詢 | V7.1 Pro (Data Resilience)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -68,10 +68,7 @@
         .filter-panel { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 12px; width: 100%; }
         .filter-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--sub); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 10px; padding: 0 4px; }
         .clear-filter-btn { color: var(--blue); background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; }
-        
-        /* V8: 2x2 Grid Layout */
-        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        
+        .filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
         select.filter-select {
             width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
             border-radius: 10px; padding: 10px 8px; color: #fff; font-size: 14px; outline: none;
@@ -81,16 +78,6 @@
             text-overflow: ellipsis; white-space: nowrap; overflow: hidden; transition: border-color 0.2s;
         }
         select.filter-select:focus { border-color: var(--blue); }
-        
-        /* V8: 專屬輸入框樣式 */
-        .filter-input {
-            width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none;
-            transition: border-color 0.2s;
-        }
-        .filter-input:focus { border-color: var(--blue); background: rgba(255,255,255,0.1); }
-        .filter-input::placeholder { color: rgba(255,255,255,0.3); }
-
         .id-chips-container { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--sep); display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; }
         .id-chips-container:empty { display: none; }
         .id-chip { background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.2s; animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.95); }
@@ -147,7 +134,7 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="輸入編號 或 關鍵字 (如 GT 4F Twist)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="輸入編號 (支援 0401, #301)" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -156,14 +143,13 @@
 
         <div class="filter-panel">
             <div class="filter-header">
-                <span>📍 空間與條件過濾器</span>
+                <span>📍 空間聯動過濾器</span>
                 <button class="clear-filter-btn" id="clearFilterBtn">重置條件</button>
             </div>
             <div class="filter-grid">
                 <select id="selHall" class="filter-select"><option value="">🏛️ 廳別</option></select>
                 <select id="selFloor" class="filter-select"><option value="">📶 樓層</option></select>
                 <select id="selLoc" class="filter-select"><option value="">🎯 位置</option></select>
-                <input type="text" id="selKeyword" class="filter-input" placeholder="🔍 指定條件 (接頭/線材)" autocomplete="off">
             </div>
             <div id="filterIdChips" class="id-chips-container"></div>
         </div>
@@ -218,14 +204,22 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 });
 
-// 處理 0401, 04-01 -> AV 04-01 的還原
+// 【修正 1：智慧搜尋引擎收斂】不再盲目為所有數字補 AV，保留 301 找 #301 的彈性
 function normalizeSearchInput(rawVal) {
     let val = rawVal.trim().toUpperCase();
     if (!val) return '';
+    
+    // 如果是 4 碼純數字 (如 0401)，精準轉為 AV 04-01
     if (/^\d{4}$/.test(val)) return `AV ${val.substring(0, 2)}-${val.substring(2)}`;
+    
+    // 如果是 04-01 格式，精準補上 AV
     if (/^\d{2}-\d{2}/.test(val)) return `AV ${val}`;
+    
+    // 處理 AV 黏在一起的狀況 (AV04-01 -> AV 04-01)
     val = val.replace(/^AV\s*/, 'AV ');
     val = val.replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+    
+    // 若為其他格式 (如 301)，原封不動回傳讓模糊搜尋接手
     return val;
 }
 
@@ -236,11 +230,6 @@ function bindEvents() {
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const sugsBox = getEle('suggestions');
-            if (sugsBox.style.display === 'block') {
-                const firstSug = sugsBox.querySelector('.sug-item');
-                if (firstSug) return triggerSearch(firstSug.dataset.id);
-            }
             let val = normalizeSearchInput(searchInput.value);
             if (val) triggerSearch(val);
         }
@@ -252,12 +241,9 @@ function bindEvents() {
     getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
     getEle('saveBtn').addEventListener('click', saveAliases);
 
-    // 綁定前三個下拉選單
     ['selHall', 'selFloor', 'selLoc'].forEach(id => {
         getEle(id).addEventListener('change', updateFilters);
     });
-    // 綁定第四個文字過濾器
-    getEle('selKeyword').addEventListener('input', updateFilters);
 
     document.addEventListener('click', e => {
         const sug = e.target.closest('.sug-item');
@@ -288,6 +274,7 @@ async function loadData() {
                 floor = floorMatch[1].toUpperCase();
                 exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
+                // 【修正 3：房號格式 03.xx 解析】支援萃取 #301/#302 隱藏的樓層
                 const roomMatch = exactLoc.match(/^0?(\d{1,2})\.\d{2}/);
                 if (roomMatch) {
                     floor = roomMatch[1] + 'F';
@@ -299,11 +286,12 @@ async function loadData() {
                 }
             }
 
-            // 【V8 終極硬規則】防呆升級：只要原始 ID 裡包含 05-61 到 05-66，無視前綴，強制送進 5MF
-            if (/(?:05-6[1-6])(?:\.\d+)?/i.test(rawId)) {
+            // 終極業務規則：強迫將 05-61 ~ 05-66 歸類到 5MF
+            if (/^AV\s*05-6[1-6](?:\.\d+)?$/i.test(stdId)) {
                 floor = '5MF';
             }
 
+            // 清除前導零 (05MF -> 5MF, B02F -> B2F)
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
 
             return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
@@ -316,35 +304,8 @@ async function loadData() {
         });
 
         buildAliasEditor();
-        buildSearchIndex(); // 建立全域反向索引
         populateInitialFilters(); 
     } catch(e) { showPlaceholder('⚠️ 無法載入資料'); }
-}
-
-// 【V8 核心：建立反向搜尋索引 (Reverse Index)】
-function buildSearchIndex() {
-    uniqueBoxes.forEach(box => {
-        const matches = db.filter(d => d.id === box.id);
-        const hallInfo = CONFIG.HALL_MAP[box.hall];
-        
-        let rawStr = [
-            box.id, 
-            box.hall, 
-            hallInfo ? hallInfo.short : '', 
-            hallInfo ? hallInfo.name : '', 
-            box._floor, 
-            box._exactLoc
-        ];
-        
-        matches.forEach(m => {
-            rawStr.push(m.sys);
-            if (aliases[m.sys]) rawStr.push(aliases[m.sys]); // 注入馬甲，讓自訂名稱可被搜到
-            rawStr.push(m.dest, m.room, m.conn, m.rack, m.dev);
-        });
-
-        // 轉大寫，並將標點符號與換行替換為空白
-        box._searchIndex = rawStr.join(' ').toUpperCase().replace(/[\n\r\t\/、，,\-]/g, ' ').replace(/\s+/g, ' ');
-    });
 }
 
 function populateInitialFilters() {
@@ -393,57 +354,48 @@ function updateFilters(e) {
     let h = getEle('selHall').value;
     let f = getEle('selFloor').value;
     let l = getEle('selLoc').value;
-    let k = getEle('selKeyword').value.trim().toUpperCase(); // 取得第四欄位的關鍵字
     
     const triggerId = e ? e.target.id : null;
 
-    // 前三個欄位的狀態自癒防呆機制
     if (triggerId === 'selHall') {
         const validF = uniqueBoxes.filter(d => d.hall === h).map(d => d._floor);
         if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
+        
         const validL = uniqueBoxes.filter(d => d.hall === h && (!f || d._floor === f)).map(d => d._exactLoc);
         if (l && !validL.includes(l)) { l = ''; getEle('selLoc').value = ''; }
     } 
     else if (triggerId === 'selFloor') {
         const validH = uniqueBoxes.filter(d => d._floor === f).map(d => d.hall);
         if (h && !validH.includes(h)) { h = ''; getEle('selHall').value = ''; }
+        
         const validL = uniqueBoxes.filter(d => d._floor === f && (!h || d.hall === h)).map(d => d._exactLoc);
         if (l && !validL.includes(l)) { l = ''; getEle('selLoc').value = ''; }
     } 
     else if (triggerId === 'selLoc') {
         const validH = uniqueBoxes.filter(d => d._exactLoc === l).map(d => d.hall);
         if (h && !validH.includes(h)) { h = ''; getEle('selHall').value = ''; }
+        
         const validF = uniqueBoxes.filter(d => d._exactLoc === l && (!h || d.hall === h)).map(d => d._floor);
         if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
     }
 
     getEle('suggestions').style.display = 'none';
 
-    // 進行全條件過濾
     let filteredBoxes = uniqueBoxes.filter(d => {
         if (h && d.hall !== h) return false;
         if (f && d._floor !== f) return false;
         if (l && d._exactLoc !== l) return false;
-        
-        // 加上第四個欄位 (指定條件) 的 AND 模糊過濾
-        if (k) {
-            const tokens = k.replace(/[\n\r\t\/、，,\-]/g, ' ').replace(/\s+/g, ' ').split(' ').filter(Boolean);
-            if (!tokens.every(t => d._searchIndex.includes(t))) return false;
-        }
-        
         return true;
     });
 
-    // 動態收斂前三個下拉選單 (確保選單裡只剩下符合關鍵字的選項)
     if (!h) updateDropdownOptions('selHall', filteredBoxes.map(d => d.hall));
     if (!f) updateDropdownOptions('selFloor', filteredBoxes.map(d => d._floor));
     if (!l) updateDropdownOptions('selLoc', filteredBoxes.map(d => d._exactLoc));
 
-    // 渲染按鈕牆
     const chipBox = getEle('filterIdChips');
     if (filteredBoxes.length === 0) {
         chipBox.innerHTML = '<div class="chip-empty-msg">⚠️ 無符合條件的迴路盒</div>';
-    } else if (!h && !f && !l && !k) {
+    } else if (!h && !f && !l) {
         chipBox.innerHTML = ''; 
     } else {
         chipBox.innerHTML = filteredBoxes
@@ -454,7 +406,7 @@ function updateFilters(e) {
 }
 
 function resetFilters() {
-    ['selHall', 'selFloor', 'selLoc', 'selKeyword'].forEach(id => getEle(id).value = '');
+    ['selHall', 'selFloor', 'selLoc'].forEach(id => getEle(id).value = '');
     populateInitialFilters(); 
     getEle('filterIdChips').innerHTML = ''; 
 }
@@ -465,29 +417,14 @@ function triggerSearch(id) {
     renderResult(id);
 }
 
-// 【主搜尋框 Omnibox：支援 ID 或 多條件模糊搜尋】
 function handleMainInput() {
-    let rawVal = getEle('searchInput').value.trim().toUpperCase();
-    if (!rawVal) return getEle('suggestions').style.display = 'none';
-    
-    // 預先轉換常見 ID 格式
-    let idVal = '';
-    if (/^\d{4}$/.test(rawVal)) idVal = `AV ${rawVal.substring(0, 2)}-${rawVal.substring(2)}`;
-    else if (/^\d{2}-\d{2}/.test(rawVal)) idVal = `AV ${rawVal}`;
-    else idVal = rawVal.replace(/^AV\s*/, 'AV ').replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+    let val = normalizeSearchInput(getEle('searchInput').value);
 
-    // 將輸入字串 Tokenize
-    const searchStr = rawVal.replace(/[\n\r\t\/、，,\-]/g, ' ').replace(/\s+/g, ' ');
-    const tokens = searchStr.split(' ').filter(Boolean);
+    if (!val) return getEle('suggestions').style.display = 'none';
     
-    const sugs = uniqueBoxes.filter(d => {
-        // 第一順位：如果長得像 ID，直接比中 ID
-        if (idVal && d.id.includes(idVal)) return true;
-        // 第二順位：啟動 Omnibox AND 模糊比對
-        if (tokens.length > 0 && tokens.every(t => d._searchIndex.includes(t))) return true;
-        return false;
-    }).slice(0, CONFIG.MAX_SUGGESTIONS);
+    const searchRegex = new RegExp(val.replace(/\s+/g, '\\s*'), 'i');
     
+    const sugs = uniqueBoxes.filter(d => searchRegex.test(d.id)).slice(0, CONFIG.MAX_SUGGESTIONS);
     if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
     
     getEle('suggestions').innerHTML = sugs.map(d => {
@@ -508,6 +445,7 @@ function renderResult(id) {
     const first = matches[0];
     const hallInfo = CONFIG.HALL_MAP[first.hall] || { name: first.hall || '—', short: '?', color: '#8E8E93' };
 
+    // 【修正 2：多重位置聚合】將同 ID 下的所有不重複位置收集起來並用斜線串接
     const uniqueLocs = [...new Set(matches.map(d => d.loc?.trim()).filter(Boolean))].join(' / ') || '—';
 
     const groups = new Map();
@@ -521,7 +459,7 @@ function renderResult(id) {
 
     const rows = [...groups.values()].sort((a,b) => a.sys.localeCompare(b.sys,'zh-TW')).map(g => 
         `<tr><td><div class="sys-name">${escHtml(g.sys)}</div><div class="dest-info"><span class="dest-icon">↳</span> <span>${escHtml(g.destInfo)}</span></div></td>
-        <td>${escHtml(g.conn)}</td><td>${g.qty||'0'}</td></tr>` 
+        <td>${escHtml(g.conn)}</td><td>${g.qty||'0'}</td></tr>` // 【修正 4：讓缺少的 conn 也穩定顯示為 —】
     ).join('');
 
     getEle('resultArea').innerHTML = `
@@ -560,10 +498,6 @@ function saveAliases() {
     
     try {
         localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(aliases));
-        
-        // 重建索引：讓新設定的馬甲立刻生效！
-        buildSearchIndex();
-        
         btn.innerText = '✅ 已儲存'; 
         btn.style.background = 'var(--green)';
         setTimeout(() => { btn.innerText = '儲存'; btn.style.background = 'var(--blue)'; getEle('settingsArea').style.display = 'none'; }, 800);
