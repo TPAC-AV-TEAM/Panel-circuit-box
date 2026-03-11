@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V11.0</title>
+    <title>AV 迴路盒查詢 | V11.1 UX Refined</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -106,19 +106,32 @@
         .list-card-id { font-size: 18px; font-weight: 600; }
         .list-card-loc { font-size: 13px; color: var(--text-mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+        /* ── Table & Category Colors ── */
         .section-title { font-size: 12px; color: var(--text-sub); font-weight: 700; letter-spacing: 0.12em; margin-bottom: 12px; }
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         thead th { text-align: left; font-size: 13px; color: var(--text-sub); font-weight: 600; padding: 0 4px 10px; border-bottom: 1px solid var(--border); }
         thead th:nth-child(1) { width: 55%; }
         thead th:nth-child(2) { width: 30%; }
         thead th:nth-child(3) { width: 15%; text-align: right; }
-        tbody tr { border-bottom: 1px solid var(--sep); }
+        tbody tr.data-row { border-bottom: 1px solid var(--sep); }
         tbody td { padding: 14px 4px; font-size: 16px; font-weight: 500; vertical-align: top; word-wrap: break-word; }
         tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; }
-        .sys-name { font-weight: 600; line-height: 1.4; }
+        
+        .sys-name { font-weight: 600; line-height: 1.4; transition: color 0.2s; }
         .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
-        .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; }
+        .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; opacity: 0.6; }
 
+        /* ── UX Placeholder Card ── */
+        .placeholder-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 16px; animation: fadeIn 0.4s ease-out; width: 100%; max-width: 540px; margin: 0 auto; }
+        .ph-icon { font-size: 42px; margin-bottom: 16px; opacity: 0.9; }
+        .ph-title { font-size: 20px; font-weight: 700; color: var(--text-main); margin-bottom: 24px; letter-spacing: 0.05em; }
+        .ph-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 16px; padding: 20px; width: 100%; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02); }
+        .ph-rule { font-size: 14px; font-weight: 600; color: var(--blue); margin-bottom: 14px; }
+        .ph-item { font-size: 14px; color: var(--text-main); margin-bottom: 10px; line-height: 1.6; display: flex; }
+        .ph-item span { color: var(--text-sub); display: inline-block; width: 85px; flex-shrink: 0; font-weight: 500; }
+        .ph-hint { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--sep); font-size: 13px; color: var(--text-mute); line-height: 1.5; }
+
+        /* ── Settings ── */
         .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .save-btn { background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 8px 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
         .close-settings { background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 10px; width: 34px; height: 34px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -126,16 +139,13 @@
         .alias-orig { font-size: 14px; color: var(--text-mute); flex: 1; word-break: break-all; min-width: 0; line-height: 1.3; }
         .alias-row input { flex: 1; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: #fff; outline: none; font-size: 15px; min-width: 0; transition: border-color 0.2s; }
         .alias-row input:focus { border-color: var(--blue); }
-
-        .placeholder { text-align: center; padding: 100px 20px; color: var(--text-sub); font-size: 15px; font-weight: 500; letter-spacing: 0.05em; line-height: 1.6; }
-        .placeholder span { display: block; margin-top: 8px; font-size: 13px; opacity: 0.6; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V11.0</div>
+    <div class="version-label">V11.1 UX REFINED</div>
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
@@ -162,10 +172,7 @@
         <div id="aliasList" style="max-height:400px; overflow-y:auto; padding-right:4px;"></div>
     </div>
     <div id="resultArea" style="display:none"></div>
-    <div id="placeholder" class="placeholder">
-        準備掃描 / 查詢<br>
-        <span>支援全域模糊搜尋與精準 ID 對接</span>
-    </div>
+    <div id="placeholderContainer"></div>
 </div>
 
 <script>
@@ -185,7 +192,6 @@ const CONFIG = {
     }
 };
 
-// 廳別意圖識別：token → hall key
 const HALL_TOKENS = new Map([
     ['GT', '大劇院'],    ['大劇院', '大劇院'],
     ['BB', '多形式中劇院'], ['藍盒子', '多形式中劇院'],
@@ -197,11 +203,8 @@ const HALL_TOKENS = new Map([
     ['外部', '卸貨口與外部空間'], ['外部空間', '卸貨口與外部空間'],
 ]);
 
-// 樓層 token 識別 regex（修正：明確區分 B1F/1F/5MF/RF，避免誤判）
 const FLOOR_RE = /^(B\d{1,2}F?|RF|\d{1,2}F|\d{1,2}MF)$/;
 
-
-// 預設 Alias（所有裝置共用基準，localStorage 只儲存使用者自行修改的部分）
 const DEFAULT_ALIASES = {
     'POWER 1,8 kW 1-PHASE IG 120 V/15A HOSP. GRADE': 'Power 15A / H插座',
     'POWER 22 kW 3-PHASE 5-WIRE IG 280V/63A':        'Power 63A',
@@ -230,11 +233,22 @@ const tokenize = q => String(q ?? '').split(/[\s,，、;:\/\\|]+/).map(normStr).
 window.addEventListener('DOMContentLoaded', async () => {
     const saved = safeParse(localStorage.getItem(CONFIG.STORAGE_KEY), {});
     aliases = { ...DEFAULT_ALIASES, ...saved };
+    showPlaceholder(); // 初始化微型說明書
     bindEvents();
     await loadData();
 });
 
-// ID 正規化：0401 / 04-01 / AV0401 → AV 04-01
+// 智慧色彩分類引擎 (A+B 視覺核心)
+function getSysCategory(sysName) {
+    const upperSys = String(sysName).toUpperCase();
+    if (upperSys.includes('POWER') || upperSys.includes('電源') || upperSys.includes('KW')) return { type: 'POWER', color: '#FF453A' }; // 紅色
+    if (upperSys.includes('光纖')) return { type: 'FIBER', color: '#0A84FF' }; // 藍色
+    if (upperSys.includes('音頻') || upperSys.includes('麥克風') || upperSys.includes('揚聲') || upperSys.includes('廣播')) return { type: 'AUDIO', color: '#32D74B' }; // 綠色
+    if (upperSys.includes('視訊')) return { type: 'VIDEO', color: '#FF9F0A' }; // 橘色
+    if (upperSys.includes('網路') || upperSys.includes('對講') || upperSys.includes('RJ')) return { type: 'NETWORK', color: '#BF5AF2' }; // 紫色
+    return { type: 'OTHER', color: '#FFFFFF' }; // 預設白灰色
+}
+
 function normalizeId(raw) {
     let v = raw.trim().toUpperCase();
     if (!v) return v;
@@ -245,7 +259,6 @@ function normalizeId(raw) {
     return v;
 }
 
-// 搜尋索引：系統/接頭/目的地/位置等欄位，廳別與樓層由 HALL_TOKENS / FLOOR_RE 嚴格攔截
 function buildSearchIndex() {
     const map = new Map();
     db.forEach(d => {
@@ -262,21 +275,17 @@ function buildSearchIndex() {
     idSearchIndex = map;
 }
 
-// 智慧模糊比對
 function fuzzyMatchIds(query) {
     const tokens = tokenize(query);
     if (!tokens.length) return [];
     return uniqueBoxes.filter(d => {
         const idx = idSearchIndex.get(d.id) || '';
         return tokens.every(t => {
-            // 1. 廳別意圖攔截
             if (HALL_TOKENS.has(t)) return d.hall === HALL_TOKENS.get(t);
-            // 2. 樓層意圖攔截
             if (FLOOR_RE.test(t)) {
                 const f = normStr(d._floor);
                 return f === t || f === t + 'F';
             }
-            // 3. 一般全域索引比對
             return idx.includes(t);
         });
     });
@@ -298,7 +307,6 @@ function bindEvents() {
         let sugs = fuzzyMatchIds(raw);
         const cleanRaw = raw.replace(/[^A-Z0-9]/ig, '').toUpperCase();
 
-        // 編號本身含關鍵字的排前面
         sugs.sort((a, b) => {
             const aHit = a.id.replace(/[^A-Z0-9]/g,'').includes(cleanRaw);
             const bHit = b.id.replace(/[^A-Z0-9]/g,'').includes(cleanRaw);
@@ -332,14 +340,13 @@ function bindEvents() {
         if (!raw) return;
         getEle('suggestions').style.display = 'none';
 
-        // 精準 ID 比對：先嘗試正規化，再直接比對原始大寫
         const norm = normalizeId(raw);
         const exact = uniqueBoxes.find(d => d.id === norm || d.id === raw.toUpperCase());
         if (exact) return triggerSearch(exact.id);
 
-        // 模糊搜尋：唯一結果直接開，多筆顯示列表
         const results = fuzzyMatchIds(raw);
         if (results.length === 1) return triggerSearch(results[0].id);
+        
         renderListResults(results, raw);
     });
 
@@ -371,7 +378,6 @@ async function loadData() {
 
         db = rawDb.map(d => {
             const stdId = (d.id || '').trim().toUpperCase().replace(/^AV\s*/, 'AV ');
-
             let floor = '', exactLoc = (d.loc || '').trim();
 
             const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
@@ -380,9 +386,8 @@ async function loadData() {
                 exactLoc = exactLoc.replace(new RegExp(floorMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').replace(/^[-\s]+/, '').trim();
             } else {
                 const roomMatch = exactLoc.match(/^0?(\d{1,2})\.\d{2}/);
-                if (roomMatch) {
-                    floor = roomMatch[1] + 'F';
-                } else {
+                if (roomMatch) floor = roomMatch[1] + 'F';
+                else {
                     const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
                     if (idMatch) floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
                 }
@@ -402,14 +407,17 @@ async function loadData() {
         buildAliasEditor();
         buildSearchIndex();
     } catch(e) {
-        showPlaceholder('⚠️ 無法載入資料，請確認網路連線');
+        getEle('placeholderContainer').innerHTML = `<div class="placeholder-wrap"><div class="ph-title" style="color:#FF453A;">⚠️ 系統初始化失敗</div><div class="ph-hint">無法載入資料庫，請確認您的網路連線或重新整理頁面。</div></div>`;
     }
 }
 
-// 多筆結果列表（保留完整物件，顯示廳別+位置）
 function renderListResults(list, query) {
     currentId = null;
-    if (!list.length) return showPlaceholder('查無符合條件的迴路盒');
+    if (!list.length) {
+        showPlaceholder();
+        getEle('placeholderContainer').innerHTML = `<div class="placeholder-wrap"><div class="ph-icon">👻</div><div class="ph-title">查無相符資料</div><div class="ph-hint">找不到符合「${escHtml(query)}」的迴路盒，請嘗試更換關鍵字。</div></div>`;
+        return;
+    }
 
     const sorted = list.slice().sort((a, b) => a.id.localeCompare(b.id));
     const itemsHtml = sorted.map((d, i) => {
@@ -432,13 +440,13 @@ function renderListResults(list, query) {
             <div class="list-results-container">${itemsHtml}</div>
         </div>`;
     getEle('resultArea').style.display = 'block';
-    getEle('placeholder').style.display = 'none';
+    getEle('placeholderContainer').style.display = 'none';
 }
 
 function renderResult(id) {
     if (!id) return;
     const matches = db.filter(d => d.id === id);
-    if (!matches.length) return showPlaceholder('查無此編號');
+    if (!matches.length) return;
 
     currentId = id;
     const first = matches[0];
@@ -454,12 +462,32 @@ function renderResult(id) {
         groups.get(key).qty += parseInt(d.qty, 10) || 0;
     });
 
-    const rows = [...groups.values()]
-        .sort((a,b) => a.sys.localeCompare(b.sys,'zh-TW'))
-        .map(g => `<tr>
-            <td><div class="sys-name">${escHtml(g.sys)}</div><div class="dest-info"><span class="dest-icon">↳</span><span>${escHtml(g.dest)}</span></div></td>
-            <td>${escHtml(g.conn)}</td><td>${g.qty||'0'}</td>
-        </tr>`).join('');
+    // 依照系統名稱排序，準備進行視覺斷點分群
+    const sortedGroups = [...groups.values()].sort((a,b) => a.sys.localeCompare(b.sys,'zh-TW'));
+    
+    let lastSysType = null;
+    let rowsHtml = '';
+
+    sortedGroups.forEach(g => {
+        const catInfo = getSysCategory(g.sys);
+        
+        // 判斷是否需要插入分類斷點 (留白區隔)
+        const isNewCategory = lastSysType !== null && lastSysType !== catInfo.type;
+        if (isNewCategory) {
+            rowsHtml += `<tr style="border: none;"><td colspan="3" style="height: 18px; padding: 0;"></td></tr>`;
+        }
+        
+        rowsHtml += `<tr class="data-row" style="${isNewCategory ? 'border-top: 1px solid var(--sep);' : ''}">
+            <td style="border-left: 3px solid ${catInfo.color}; padding-left: 12px; border-radius: 2px 0 0 2px;">
+                <div class="sys-name" style="color:${catInfo.color};">${escHtml(g.sys)}</div>
+                <div class="dest-info"><span class="dest-icon" style="color:${catInfo.color}">↳</span><span>${escHtml(g.dest)}</span></div>
+            </td>
+            <td>${escHtml(g.conn)}</td>
+            <td>${g.qty||'0'}</td>
+        </tr>`;
+        
+        lastSysType = catInfo.type;
+    });
 
     getEle('resultArea').innerHTML = `
         <div class="card">
@@ -484,18 +512,30 @@ function renderResult(id) {
             <p class="section-title">接口清單 / INTERFACE LIST</p>
             <table>
                 <thead><tr><th>系統 / 目的地</th><th>接頭</th><th>數量</th></tr></thead>
-                <tbody>${rows}</tbody>
+                <tbody>${rowsHtml}</tbody>
             </table>
         </div>`;
     getEle('resultArea').style.display = 'block';
-    getEle('placeholder').style.display = 'none';
+    getEle('placeholderContainer').style.display = 'none';
 }
 
-function showPlaceholder(msg = '準備掃描 / 查詢<br><span>支援全域模糊搜尋與精準 ID 對接</span>') {
+function showPlaceholder() {
     currentId = null;
     getEle('resultArea').style.display = 'none';
-    getEle('placeholder').style.display = 'block';
-    getEle('placeholder').innerHTML = msg;
+    getEle('placeholderContainer').style.display = 'block';
+    getEle('placeholderContainer').innerHTML = `
+        <div class="placeholder-wrap">
+            <div class="ph-icon">🔍</div>
+            <div class="ph-title">開始查詢迴路盒</div>
+            <div class="ph-card">
+                <div class="ph-rule">💡 支援單一或多條件 (空白分隔)：</div>
+                <div class="ph-item"><span>📌 編號</span> 04-01 或 #1200-A</div>
+                <div class="ph-item"><span>🏛️ 空間</span> GT (大劇院)、4F、公共</div>
+                <div class="ph-item"><span>🔌 設備</span> Twist、BNC、光纖</div>
+                <div class="ph-hint">範例：「GT 4F Twist」將為您列出大劇院 4 樓所有電源接頭。</div>
+            </div>
+        </div>
+    `;
 }
 
 function buildAliasEditor() {
