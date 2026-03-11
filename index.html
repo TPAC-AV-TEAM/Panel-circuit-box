@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V6.6 Pro (Floor Engine Upgraded)</title>
+    <title>AV 迴路盒查詢 | V6.7 Pro (Security & UX Fix)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -197,8 +197,15 @@ let uniqueBoxes = [];
 let aliases = {};
 let currentId = null;
 
+// 【修復 1：XSS 防護強化】補齊單雙引號轉義，防止包含引號的資料破壞 DOM
+const escHtml = s => String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const safeParse = (str, fb) => { try { return JSON.parse(str) || fb; } catch(e) { return fb; } };
-const escHtml = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const getEle = id => document.getElementById(id);
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -208,7 +215,19 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 function bindEvents() {
-    getEle('searchInput').addEventListener('input', handleMainInput);
+    const searchInput = getEle('searchInput');
+    searchInput.addEventListener('input', handleMainInput);
+    
+    // 【修復 3：UX 體驗升級】支援實體鍵盤 Enter 鍵與條碼掃描槍
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // 先將輸入字串進行正規化 (AV01 轉為 AV 01)
+            let val = searchInput.value.trim().toUpperCase().replace(/^AV\s*/, 'AV ');
+            if (val) triggerSearch(val);
+        }
+    });
+
     getEle('clearBtn').addEventListener('click', () => { getEle('searchInput').value = ''; getEle('suggestions').style.display = 'none'; showPlaceholder('READY TO SCAN'); });
     getEle('clearFilterBtn').addEventListener('click', resetFilters);
     getEle('settingBtn').addEventListener('click', () => getEle('settingsArea').style.display = getEle('settingsArea').style.display==='none'?'block':'none');
@@ -242,25 +261,20 @@ async function loadData() {
             let floor = '';
             let exactLoc = (d.loc || '').trim();
             
-            // 【V6.6 修復：全面攔截 5M, 5MF, B1M, RF 等格式】
             const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}F|[B]?\d{1,2}M[F]?|RF)(?![a-zA-Z0-9])/i);
             
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
-                // 若字串只有 5M，強制補上 F 變為 5MF
                 if (floor.endsWith('M')) floor += 'F'; 
                 exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
-                // 若位置沒寫，從 ID 萃取。同時支援單碼 ID (如 AV 5M-01) 與雙碼 ID (如 AV 05M-01)
                 const idMatch = stdId.match(/^AV\s*(\d{1,2}[M]?)/i);
                 if (idMatch) {
                     floor = idMatch[1].toUpperCase();
-                    // ID 抓出來的通常沒有 F，手動補上
                     if (!floor.endsWith('F')) floor += 'F';
                 }
             }
 
-            // 清洗前導零 (05MF -> 5MF, B02F -> B2F)
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
 
             return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
@@ -283,20 +297,12 @@ function populateInitialFilters() {
     updateDropdownOptions('selLoc', uniqueBoxes.map(d => d._exactLoc));
 }
 
-// 【V6.6 小數點權重排序引擎】
 function getFloorWeight(floorStr) {
     if (!floorStr || floorStr === '未知樓層') return 999;
-    if (floorStr === 'RF') return 100; // 屋頂最高
-    
+    if (floorStr === 'RF') return 100; 
     let weight = parseInt(floorStr.replace(/\D/g, ''), 10) || 0;
-    
-    // 如果是地下室 (B開頭)，轉為負數 (B2F -> -2, B1F -> -1)
     if (floorStr.startsWith('B')) weight = -weight; 
-    
-    // 關鍵！如果樓層字串裡包含 M (如 5MF)，加上 0.5 權重
-    // 這樣 5MF (5.5) 就會精準排在 5F (5.0) 的正下方
     if (floorStr.includes('M')) weight += 0.5;
-    
     return weight;
 }
 
@@ -452,16 +458,22 @@ function renderResult(id) {
 
 function showPlaceholder(msg) { currentId = null; getEle('resultArea').style.display = 'none'; getEle('placeholder').style.display = 'block'; getEle('placeholder').innerText = msg; }
 
+// 【修復 2：Alias 鍵值安全儲存】改用 encodeURIComponent 處理 dataset
 function buildAliasEditor() {
     const sysNames = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
-    getEle('aliasList').innerHTML = sysNames.map(s => `<div class="alias-row"><span class="alias-orig">${escHtml(s)}</span><input class="alias-input" data-orig="${escHtml(s)}" value="${escHtml(aliases[s]||'')}" placeholder="自訂"></div>`).join('');
+    getEle('aliasList').innerHTML = sysNames.map(s => `
+        <div class="alias-row">
+            <span class="alias-orig">${escHtml(s)}</span>
+            <input class="alias-input" data-orig="${encodeURIComponent(s)}" value="${escHtml(aliases[s]||'')}" placeholder="自訂">
+        </div>`).join('');
 }
 
 function saveAliases() {
     const btn = getEle('saveBtn');
     document.querySelectorAll('.alias-input').forEach(el => { 
         const v = el.value.trim(); 
-        const orig = el.dataset.orig; 
+        // 讀取時解碼回原始字串
+        const orig = decodeURIComponent(el.dataset.orig); 
         if(v) aliases[orig] = v; else delete aliases[orig]; 
     });
     
