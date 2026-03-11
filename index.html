@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V10.5</title>
+    <title>AV 迴路盒查詢 | V11.0</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -134,7 +134,7 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V10.5</div>
+    <div class="version-label">V11.0</div>
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
@@ -182,8 +182,7 @@ const CONFIG = {
     }
 };
 
-// 廳別意圖識別：token → hall key（完整涵蓋所有廳別與常用別名）
-// Fix: 之前版本缺少排練室/公共/外部，且 GT 等 short code 在索引裡若出現會干擾
+// 廳別意圖識別：token → hall key
 const HALL_TOKENS = new Map([
     ['GT', '大劇院'],    ['大劇院', '大劇院'],
     ['BB', '多形式中劇院'], ['藍盒子', '多形式中劇院'],
@@ -214,7 +213,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ID 正規化：0401 / 04-01 / AV0401 → AV 04-01
-// Fix: 不強制把所有 AV 開頭都加空格，先精確比對原始 ID
 function normalizeId(raw) {
     let v = raw.trim().toUpperCase();
     if (!v) return v;
@@ -225,9 +223,7 @@ function normalizeId(raw) {
     return v;
 }
 
-// 搜尋索引：只放系統/接頭/目的地等欄位
-// Fix: 廳別與樓層不進索引，改由 HALL_TOKENS / FLOOR_RE 嚴格攔截
-// Fix: loc 保留進索引（「控制台位置」、「天花板」等描述性位置仍可搜）
+// 搜尋索引：系統/接頭/目的地/位置等欄位，廳別與樓層由 HALL_TOKENS / FLOOR_RE 嚴格攔截
 function buildSearchIndex() {
     const map = new Map();
     db.forEach(d => {
@@ -256,8 +252,6 @@ function fuzzyMatchIds(query) {
             // 2. 樓層意圖攔截
             if (FLOOR_RE.test(t)) {
                 const f = normStr(d._floor);
-                // 使用者輸入 4F，_floor 存的是 4F → 直接比對
-                // 使用者輸入 B1，_floor 是 B1F → 補 F 後比對
                 return f === t || f === t + 'F';
             }
             // 3. 一般全域索引比對
@@ -330,7 +324,7 @@ function bindEvents() {
     getEle('clearBtn').addEventListener('click', () => {
         input.value = '';
         getEle('suggestions').style.display = 'none';
-        showPlaceholder('準備掃描 / 查詢<br><span>支援全域模糊搜尋與精準 ID 對接</span>');
+        showPlaceholder();
     });
 
     getEle('settingBtn').addEventListener('click', () => {
@@ -354,17 +348,14 @@ async function loadData() {
         const rawDb = await fetch(`${CONFIG.DATA_URL}?v=${Date.now()}`).then(r => r.json());
 
         db = rawDb.map(d => {
-            // Fix: 保留原始 ID 格式（AV01-02 不強制加空格），以免找不到資料
-            // 但同時也建立正規化版本，讓搜尋能對應
-            const rawId = (d.id || '').trim();
-            const stdId = rawId.toUpperCase().replace(/^AV\s*/, 'AV ');
+            const stdId = (d.id || '').trim().toUpperCase().replace(/^AV\s*/, 'AV ');
 
             let floor = '', exactLoc = (d.loc || '').trim();
 
             const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
-                exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim();
+                exactLoc = exactLoc.replace(new RegExp(floorMatch[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), '').replace(/^[-\s]+/, '').trim();
             } else {
                 const roomMatch = exactLoc.match(/^0?(\d{1,2})\.\d{2}/);
                 if (roomMatch) {
@@ -377,11 +368,9 @@ async function loadData() {
             if (/0?5\s*[-_.]\s*6[1-6]/i.test(stdId)) floor = '5MF';
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
 
-            // stdId 用於顯示與搜尋，原始 rawId 不再需要額外保留
             return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
         });
 
-        // Fix: uniqueBoxes 去重用 stdId
         const seenIds = new Set();
         uniqueBoxes = db.filter(d => {
             if (!d.id || seenIds.has(d.id)) return false;
