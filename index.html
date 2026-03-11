@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V6.9 Pro (Smart Input & Hard-Rules)</title>
+    <title>AV 迴路盒查詢 | V7.0 Pro (Final Stable)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -134,7 +134,7 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="輸入編號 (如: 0401, 04-01)" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="輸入編號 (支援 0401, 04-01)" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -212,7 +212,7 @@ function normalizeSearchInput(rawVal) {
     if (/^\d{4}$/.test(val)) val = val.substring(0, 2) + '-' + val.substring(2);
     // 如果起頭是數字 (如 04-01 或 0401)，補上 AV -> AV 04-01
     if (/^\d/.test(val)) val = 'AV ' + val;
-    // 處理 AV 黏在一起的狀況 (AV04-01 -> AV 04-01, AV 0401 -> AV 04-01)
+    // 處理 AV 黏在一起的狀況 (AV04-01 -> AV 04-01)
     val = val.replace(/^AV\s*/, 'AV ');
     val = val.replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
     return val;
@@ -263,32 +263,28 @@ async function loadData() {
             let floor = '';
             let exactLoc = (d.loc || '').trim();
             
-            const floorMatch = exactLoc.match(/([B]?\d{1,2})(M[F]?|F夾層|樓夾層|夾層|F)(?![a-zA-Z0-9])/i) || exactLoc.match(/(RF)/i);
+            // 【V7.0 修復：移除激進轉換，只做精準備對】
+            // 如果明確寫了 1F, B1F, 5MF, RF 才會抽走
+            const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
             
             if (floorMatch) {
-                if (floorMatch[0].toUpperCase() === 'RF') {
-                    floor = 'RF'; exactLoc = exactLoc.replace(/RF/i, '').trim();
-                } else {
-                    let num = floorMatch[1].toUpperCase();     
-                    let suffix = floorMatch[2].toUpperCase();  
-                    floor = (suffix.includes('M') || suffix.includes('夾')) ? (num + 'MF') : (num + 'F');
-                    exactLoc = exactLoc.replace(floorMatch[0], '').replace(/^[-\s]+/, '').trim(); 
-                }
+                floor = floorMatch[1].toUpperCase();
+                exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
+                // 退回從 ID 推導 (AV 05-01 -> 5F)
                 const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
-                if (idMatch) floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
+                if (idMatch) {
+                    floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
+                }
             }
 
-            if (floor && floor !== 'RF' && exactLoc.includes('夾層')) {
-                if (!floor.includes('M')) floor = floor.replace('F', 'MF');
-                exactLoc = exactLoc.replace(/夾層/g, '').replace(/^[-\s]+/, '').trim();
-            }
-
-            // 【V6.9 業務邏輯覆寫】強迫將 05-61 ~ 05-66 歸類到 5MF
-            if (/^AV\s*05-6[1-6]$/i.test(stdId)) {
+            // 【終極業務規則】強迫將 05-61 ~ 05-66 歸類到 5MF
+            // 支援可能有子編號的情況 (例如 AV 05-61.01)
+            if (/^AV\s*05-6[1-6](?:\.\d+)?$/i.test(stdId)) {
                 floor = '5MF';
             }
 
+            // 清除前導零 (05MF -> 5MF, B02F -> B2F)
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
 
             return { ...d, id: stdId, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
