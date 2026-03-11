@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V6.7 Pro (Security & UX Fix)</title>
+    <title>AV 迴路盒查詢 | V6.9 Pro (Smart Input & Hard-Rules)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -134,7 +134,7 @@
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="直接輸入或點選下方條件尋找" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="輸入編號 (如: 0401, 04-01)" autocomplete="off">
                 <div id="suggestions" class="suggestions"></div>
             </div>
             <button class="icon-btn" id="clearBtn" title="清除">✕</button>
@@ -173,9 +173,6 @@
 </div>
 
 <script>
-/**
- * 中央配置 (CENTRAL CONFIG)
- */
 const CONFIG = {
     DATA_URL: './data.json',
     STORAGE_KEY: 'avAliases',
@@ -197,14 +194,7 @@ let uniqueBoxes = [];
 let aliases = {};
 let currentId = null;
 
-// 【修復 1：XSS 防護強化】補齊單雙引號轉義，防止包含引號的資料破壞 DOM
-const escHtml = s => String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-
+const escHtml = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const safeParse = (str, fb) => { try { return JSON.parse(str) || fb; } catch(e) { return fb; } };
 const getEle = id => document.getElementById(id);
 
@@ -214,16 +204,28 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadData();
 });
 
+// 【智慧搜尋引擎】自動還原字串格式：支援 0401, 04-01, AV0401, AV 04-01
+function normalizeSearchInput(rawVal) {
+    let val = rawVal.trim().toUpperCase();
+    if (!val) return '';
+    // 如果是 4 碼純數字 (如 0401)，補上橫線 -> 04-01
+    if (/^\d{4}$/.test(val)) val = val.substring(0, 2) + '-' + val.substring(2);
+    // 如果起頭是數字 (如 04-01 或 0401)，補上 AV -> AV 04-01
+    if (/^\d/.test(val)) val = 'AV ' + val;
+    // 處理 AV 黏在一起的狀況 (AV04-01 -> AV 04-01, AV 0401 -> AV 04-01)
+    val = val.replace(/^AV\s*/, 'AV ');
+    val = val.replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+    return val;
+}
+
 function bindEvents() {
     const searchInput = getEle('searchInput');
     searchInput.addEventListener('input', handleMainInput);
     
-    // 【修復 3：UX 體驗升級】支援實體鍵盤 Enter 鍵與條碼掃描槍
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            // 先將輸入字串進行正規化 (AV01 轉為 AV 01)
-            let val = searchInput.value.trim().toUpperCase().replace(/^AV\s*/, 'AV ');
+            let val = normalizeSearchInput(searchInput.value);
             if (val) triggerSearch(val);
         }
     });
@@ -261,18 +263,30 @@ async function loadData() {
             let floor = '';
             let exactLoc = (d.loc || '').trim();
             
-            const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}F|[B]?\d{1,2}M[F]?|RF)(?![a-zA-Z0-9])/i);
+            const floorMatch = exactLoc.match(/([B]?\d{1,2})(M[F]?|F夾層|樓夾層|夾層|F)(?![a-zA-Z0-9])/i) || exactLoc.match(/(RF)/i);
             
             if (floorMatch) {
-                floor = floorMatch[1].toUpperCase();
-                if (floor.endsWith('M')) floor += 'F'; 
-                exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
-            } else {
-                const idMatch = stdId.match(/^AV\s*(\d{1,2}[M]?)/i);
-                if (idMatch) {
-                    floor = idMatch[1].toUpperCase();
-                    if (!floor.endsWith('F')) floor += 'F';
+                if (floorMatch[0].toUpperCase() === 'RF') {
+                    floor = 'RF'; exactLoc = exactLoc.replace(/RF/i, '').trim();
+                } else {
+                    let num = floorMatch[1].toUpperCase();     
+                    let suffix = floorMatch[2].toUpperCase();  
+                    floor = (suffix.includes('M') || suffix.includes('夾')) ? (num + 'MF') : (num + 'F');
+                    exactLoc = exactLoc.replace(floorMatch[0], '').replace(/^[-\s]+/, '').trim(); 
                 }
+            } else {
+                const idMatch = stdId.match(/^AV\s*(\d{1,2})([M]?)/i);
+                if (idMatch) floor = idMatch[1] + (idMatch[2].toUpperCase() === 'M' ? 'MF' : 'F');
+            }
+
+            if (floor && floor !== 'RF' && exactLoc.includes('夾層')) {
+                if (!floor.includes('M')) floor = floor.replace('F', 'MF');
+                exactLoc = exactLoc.replace(/夾層/g, '').replace(/^[-\s]+/, '').trim();
+            }
+
+            // 【V6.9 業務邏輯覆寫】強迫將 05-61 ~ 05-66 歸類到 5MF
+            if (/^AV\s*05-6[1-6]$/i.test(stdId)) {
+                floor = '5MF';
             }
 
             if (floor) floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
@@ -401,12 +415,14 @@ function triggerSearch(id) {
 }
 
 function handleMainInput() {
-    let val = getEle('searchInput').value.trim().toUpperCase();
-    val = val.replace(/^AV\s*/, 'AV ');
+    let val = normalizeSearchInput(getEle('searchInput').value);
 
     if (!val) return getEle('suggestions').style.display = 'none';
     
-    const sugs = uniqueBoxes.filter(d => d.id.includes(val)).slice(0, CONFIG.MAX_SUGGESTIONS);
+    // 放寬比對邏輯，支援模糊搜索
+    const searchRegex = new RegExp(val.replace(/\s+/g, '\\s*'), 'i');
+    
+    const sugs = uniqueBoxes.filter(d => searchRegex.test(d.id)).slice(0, CONFIG.MAX_SUGGESTIONS);
     if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
     
     getEle('suggestions').innerHTML = sugs.map(d => {
@@ -458,7 +474,6 @@ function renderResult(id) {
 
 function showPlaceholder(msg) { currentId = null; getEle('resultArea').style.display = 'none'; getEle('placeholder').style.display = 'block'; getEle('placeholder').innerText = msg; }
 
-// 【修復 2：Alias 鍵值安全儲存】改用 encodeURIComponent 處理 dataset
 function buildAliasEditor() {
     const sysNames = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
     getEle('aliasList').innerHTML = sysNames.map(s => `
@@ -472,7 +487,6 @@ function saveAliases() {
     const btn = getEle('saveBtn');
     document.querySelectorAll('.alias-input').forEach(el => { 
         const v = el.value.trim(); 
-        // 讀取時解碼回原始字串
         const orig = decodeURIComponent(el.dataset.orig); 
         if(v) aliases[orig] = v; else delete aliases[orig]; 
     });
