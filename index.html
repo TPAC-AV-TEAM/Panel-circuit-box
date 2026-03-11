@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V10.0 Omnibox</title>
+    <title>AV 迴路盒查詢 | V10.1 Omnibox</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -37,7 +37,7 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* ── Header (極簡化) ── */
+        /* ── Header ── */
         .header {
             width: 100%; padding: 60px 16px 20px; background: rgba(0,0,0,0.85);
             backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -161,7 +161,7 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V10.0 OMNIBOX</div>
+    <div class="version-label">V10.1 OMNIBOX</div>
     
     <div class="search-group">
         <div class="search-row">
@@ -243,10 +243,6 @@ function normalizeSearchInput(rawVal) {
     return val;
 }
 
-function isIdLike(val) {
-    return /^#\d+$/i.test(val) || /^AV\s*\d{2}-\d{2}(?:\.\d+)?$/i.test(val);
-}
-
 function buildSearchIndex() {
     const map = new Map();
     db.forEach(d => {
@@ -303,38 +299,52 @@ function bindEvents() {
     const searchInput = getEle('searchInput');
     searchInput.addEventListener('input', handleMainInput);
     
+    // 【核心修正】加入「直達車」邏輯，並在 Enter 後自動收起鍵盤
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
+            searchInput.blur(); // 強制收起手機鍵盤
+            
             const raw = searchInput.value.trim();
             if (!raw) return;
 
             getEle('suggestions').style.display = 'none';
             
-            // 判斷是否為明確的 ID 導向
-            const val = normalizeSearchInput(raw);
-            if (isIdLike(val)) {
-                // 確認資料庫真的有這個 ID，有的話直接打開
-                const exists = uniqueBoxes.some(d => d.id === val);
-                if (exists) return triggerSearch(val);
+            // 1. 嘗試精準比對 ID (含格式自動補齊)
+            let exactId = raw.toUpperCase();
+            if (/^\d{4}$/.test(exactId)) exactId = `AV ${exactId.substring(0, 2)}-${exactId.substring(2)}`;
+            else if (/^\d{2}-\d{2}/.test(exactId)) exactId = `AV ${exactId}`;
+            else exactId = exactId.replace(/^AV\s*/, 'AV ').replace(/^AV\s*(\d{2})(\d{2})/, 'AV $1-$2');
+
+            // 如果資料庫內有精準吻合的 ID，直達總表
+            const exactMatch = uniqueBoxes.find(d => d.id === exactId || d.id === raw.toUpperCase());
+            if (exactMatch) {
+                return triggerSearch(exactMatch.id);
             }
             
-            // 如果不是精準 ID，或者 ID 不存在，一律展開「搜尋結果牆」
-            renderListResults(fuzzyMatchIds(raw), raw);
+            // 2. 進行模糊搜尋
+            const results = fuzzyMatchIds(raw);
+            
+            // 【修復 UX 痛點】如果模糊搜尋只找到「唯一 1 筆」，不囉嗦，直接彈出總表！
+            if (results.length === 1) {
+                return triggerSearch(results[0].id);
+            }
+            
+            // 3. 只有當結果超過 1 筆時，才需要展開「按鈕牆」讓使用者慢慢挑
+            renderListResults(results, raw);
         }
     });
 
     getEle('clearBtn').addEventListener('click', () => { 
         getEle('searchInput').value = ''; 
         getEle('suggestions').style.display = 'none'; 
-        showPlaceholder('準備掃描 / 查詢\\n<span>支援全域模糊搜尋與精準 ID 對接</span>'); 
+        showPlaceholder('準備掃描 / 查詢<br><span>支援全域模糊搜尋與精準 ID 對接</span>'); 
     });
     
     getEle('settingBtn').addEventListener('click', () => getEle('settingsArea').style.display = getEle('settingsArea').style.display==='none'?'block':'none');
     getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
     getEle('saveBtn').addEventListener('click', saveAliases);
 
-    // 委派點擊事件 (處理選單點擊與結果牆按鈕點擊)
     document.addEventListener('click', e => {
         const sug = e.target.closest('.sug-item');
         if (sug && sug.dataset.id) {
@@ -393,7 +403,6 @@ async function loadData() {
     } catch(e) { showPlaceholder('⚠️ 無法載入資料，請確認網路連線'); }
 }
 
-// 【V10 核心：智慧排序引擎】解決搜尋汙染，確保編號符合的排在最前面
 function handleMainInput() {
     const raw = getEle('searchInput').value;
     if (!raw.trim()) return getEle('suggestions').style.display = 'none';
@@ -401,7 +410,6 @@ function handleMainInput() {
     let sugs = fuzzyMatchIds(raw);
     const cleanRaw = raw.replace(/[^A-Z0-9]/ig, '').toUpperCase();
 
-    // 權重排序：編號本身包含關鍵字者優先
     sugs.sort((a, b) => {
         const aIdClean = a.id.replace(/[^A-Z0-9]/ig, '');
         const bIdClean = b.id.replace(/[^A-Z0-9]/ig, '');
