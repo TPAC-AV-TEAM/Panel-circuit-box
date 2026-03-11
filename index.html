@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V5</title>
+    <title>AV 迴路盒查詢 | V6 Pro</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -28,7 +28,7 @@
             color: var(--text);
             font-family: "SF Pro Display", "Inter", "-apple-system", sans-serif;
             min-height: 100vh;
-            /* 行動端底部安全距離防護 */
+            /* 行動端底部安全距離防護 (Mobile First) */
             padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
             display: flex;
             flex-direction: column;
@@ -50,12 +50,14 @@
             font-size: 26px; font-weight: 700;
             background: linear-gradient(180deg,#fff 0%,#8E8E93 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
 
-        /* ── Search bar ── */
-        .search-bar { display:flex; gap:8px; align-items:center; max-width:540px; margin:0 auto; }
-        .search-wrap { position:relative; flex:1; }
+        /* ── Search Group ── */
+        .search-group { display: flex; flex-direction: column; gap: 10px; max-width: 540px; margin: 0 auto; }
+        .search-row { display: flex; gap: 8px; align-items: center; width: 100%; }
+        
+        .search-wrap { position: relative; flex: 1; }
         .search-wrap input {
             width: 100%;
             background: rgba(255,255,255,0.07);
@@ -63,25 +65,10 @@
             border-radius: 14px;
             padding: 12px 16px;
             color: #fff; font-size: 16px; outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, background 0.2s;
         }
-        .search-wrap input:focus { border-color: var(--blue); }
-
-        .input-field {
-            width: 100%;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px 12px;
-            color: #fff; font-size: 15px; outline: none;
-            transition: border-color 0.2s;
-        }
-        .input-field:focus { border-color: var(--blue); }
-
-        .loc-search { margin-top: 12px; }
-        .loc-row { display: flex; gap: 8px; }
-        .loc-row .input-field { flex: 1; }
-        .suggestions.inline { position: static; margin-top: 10px; }
+        .search-wrap input:focus { border-color: var(--blue); background: rgba(255,255,255,0.1); }
+        .search-wrap input::placeholder { color: rgba(255,255,255,0.3); }
         
         .icon-btn {
             width: 44px; height: 44px;
@@ -90,37 +77,42 @@
             border-radius: 12px;
             color: var(--sub); cursor: pointer; font-size: 16px;
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            transition: background 0.15s;
+            transition: background 0.15s, transform 0.1s;
         }
+        .icon-spacer { width: 44px; height: 44px; flex-shrink: 0; visibility: hidden; }
         
         /* 觸控/滑鼠 hover 狀態分離防殘影 */
         @media (hover: hover) {
-            .icon-btn:hover { border-color: var(--sub); }
+            .icon-btn:hover { border-color: var(--sub); color: #fff; }
             .sug-item:hover { background: rgba(255,255,255,0.08); }
         }
-        .icon-btn:active { background: rgba(255,255,255,0.15); }
+        .icon-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.96); }
 
         /* ── Suggestions ── */
         .suggestions {
-            position: absolute; top: 100%; left: 0; right: 0;
+            position: absolute; top: calc(100% + 6px); left: 0; right: 0;
             background: rgba(28,28,30,0.99);
             border: 0.5px solid var(--border);
-            border-radius: 14px; margin-top: 6px;
-            overflow-y: auto; max-height: 260px;
+            border-radius: 14px;
+            overflow-y: auto; max-height: 40vh; /* 防虛擬鍵盤遮擋 */
             box-shadow: 0 8px 30px rgba(0,0,0,0.6);
             z-index: 200;
             scrollbar-width: none;
+            display: none;
         }
         .suggestions::-webkit-scrollbar { display: none; }
         
         .sug-item {
             padding: 12px 16px; cursor: pointer; font-size: 15px;
             border-bottom: 0.5px solid var(--sep);
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; flex-direction: column; gap: 4px;
         }
         .sug-item:last-child { border-bottom: none; }
         .sug-item.active, .sug-item:active { background: rgba(255,255,255,0.08); }
-        .sug-hall { font-size: 11px; font-weight: 700; }
+        
+        .sug-header { display: flex; justify-content: space-between; align-items: center; }
+        .sug-hall { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
+        .sug-loc { font-size: 13px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* ── Content ── */
         .content { width: 100%; max-width: 540px; padding: 16px 16px 0; }
@@ -131,12 +123,13 @@
             border: 0.5px solid var(--border);
             border-radius: 20px;
             padding: 20px; margin-bottom: 12px;
+            animation: fadeIn 0.3s ease-out;
         }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: var(--blue); margin-bottom: 6px; }
         .id-label { 
             font-size: 30px; font-weight: 700; letter-spacing: -0.02em; 
-            /* 名稱過長防護 */
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .divider { border: none; border-top: 0.5px solid var(--sep); margin: 14px 0; }
@@ -158,34 +151,19 @@
             text-align: left; font-size: 12px; color: var(--sub); font-weight: 600;
             padding: 0 4px 8px; border-bottom: 0.5px solid var(--border);
         }
-        /* 重配寬度，容納機房名稱 */
         thead th:nth-child(1) { width: 55%; }
         thead th:nth-child(2) { width: 30%; }
         thead th:nth-child(3) { width: 15%; text-align: right; }
         
         tbody tr { border-bottom: 0.5px solid var(--sep); }
         tbody td { 
-            padding: 12px 4px; 
-            font-size: 16px; 
-            font-weight: 500;
-            color: var(--text);
-            vertical-align: top;
-            word-wrap: break-word;
+            padding: 12px 4px; font-size: 16px; font-weight: 500;
+            color: var(--text); vertical-align: top; word-wrap: break-word;
         }
-        tbody td:last-child { 
-            text-align: right; 
-            color: #FFFFFF; 
-            font-size: 18px; 
-            font-weight: 600;
-        }
+        tbody td:last-child { text-align: right; color: #FFFFFF; font-size: 18px; font-weight: 600; }
+        
         .sys-name { font-weight: 600; color: #FFFFFF; }
-        .dest-info { 
-            font-size: 12px; 
-            color: var(--sub); 
-            margin-top: 4px; 
-            line-height: 1.3; 
-            display: flex; gap: 4px; 
-        }
+        .dest-info { font-size: 12px; color: var(--sub); margin-top: 4px; line-height: 1.3; display: flex; gap: 4px; }
         .dest-icon { color: var(--blue); flex-shrink: 0; }
 
         /* ── Settings ── */
@@ -203,16 +181,11 @@
             font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
         .alias-list { max-height: 340px; overflow-y: auto; scrollbar-width: none; }
-        .alias-row {
-            display: flex; align-items: center; gap: 10px;
-            padding: 8px 0; border-bottom: 0.5px solid var(--sep);
-        }
+        .alias-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); }
         .alias-orig { font-size: 13px; color: var(--text); flex: 1; word-break: break-all; min-width: 0; }
         .alias-row input {
-            flex: 1; padding: 7px 10px;
-            border-radius: 8px; border: 1px solid var(--border);
-            background: rgba(255,255,255,0.05); color: #fff;
-            outline: none; font-size: 14px; min-width: 0;
+            flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+            background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 14px; min-width: 0;
             transition: border-color 0.2s;
         }
         .alias-row input:focus { border-color: var(--blue); }
@@ -225,30 +198,26 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="search-bar">
-        <div class="search-wrap">
-            <input type="text" id="searchInput"
-                placeholder="輸入編號，如 AV 01-01"
-                autocomplete="off">
-            <div id="suggestions" class="suggestions" style="display:none"></div>
+    <div class="search-group">
+        <div class="search-row">
+            <div class="search-wrap">
+                <input type="text" id="searchInput" placeholder="輸入編號，如 AV 01-01" autocomplete="off">
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+            <button class="icon-btn" id="clearBtn" title="清除編號">✕</button>
+            <button class="icon-btn" id="settingBtn" title="設定">⚙️</button>
         </div>
-        <button class="icon-btn" id="clearBtn">✕</button>
-        <button class="icon-btn" id="settingBtn">⚙️</button>
+        <div class="search-row">
+            <div class="search-wrap">
+                <input type="text" id="locSearchInput" placeholder="輸入樓層或位置，如: 4F 舞台" autocomplete="off">
+                <div id="locSuggestions" class="suggestions"></div>
+            </div>
+            <button class="icon-btn" id="clearLocBtn" title="清除位置">✕</button>
+            <div class="icon-spacer"></div> </div>
     </div>
 </div>
 
 <div class="content">
-    <div class="card" id="locSearchCard">
-        <p class="section-title">樓層 / 位置 快速查詢</p>
-        <div class="loc-search">
-            <div class="loc-row">
-                <input type="text" id="floorInput" class="input-field" placeholder="樓層，如 4F / B1F" autocomplete="off">
-                <input type="text" id="locInput" class="input-field" placeholder="大概位置，如 右上舞台" autocomplete="off">
-            </div>
-            <div id="locSuggestions" class="suggestions inline" style="display:none"></div>
-        </div>
-    </div>
-
     <div id="settingsArea" class="card" style="display:none; margin-bottom:12px;">
         <div class="settings-header">
             <span class="settings-title">🛠️ 自訂系統名稱</span>
@@ -270,11 +239,13 @@
 <script>
 /**
  * 核心中央配置 (CENTRAL CONFIG)
+ * 遵循 DRY 原則與可配置性，避免 Magic Numbers 與 Hardcoding。
  */
 const CONFIG = {
     DATA_URL: './data.json',
     STORAGE_KEY: 'avAliases',
     MAX_SUGGESTIONS: 15,
+    DEBOUNCE_MS: 150, // 降低頻繁觸發的渲染效能消耗
     ANIMATION_MS: 800,
     HALL_MAP: {
         '大劇院':           { short:'GT',   color:'#FF3B30' },
@@ -293,11 +264,13 @@ let db = [];
 let aliases = {};
 let sugIdx = -1;
 let currentId = null;
+let inputTimer = null; // 用於 Debounce
 
 /* ── 工具函式 (Helpers) ── */
 const safeParse = (str, fallback) => { try { return JSON.parse(str) || fallback; } catch(e) { return fallback; } };
-const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const escHtml = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const getEle = id => document.getElementById(id);
+const debounce = (fn, delay) => (...args) => { clearTimeout(inputTimer); inputTimer = setTimeout(() => fn(...args), delay); };
 
 function safeGet(key, def) {
     const v = localStorage.getItem(key);
@@ -318,51 +291,46 @@ async function initApp() {
 }
 
 function bindEvents() {
-    const input = getEle('searchInput');
-    const sugBox = getEle('suggestions');
-    const floorInput = getEle('floorInput');
-    const locInput = getEle('locInput');
-    const locSugBox = getEle('locSuggestions');
-
-    input.addEventListener('input', handleInput);
-    input.addEventListener('keydown', handleKey);
+    const inputMain = getEle('searchInput');
+    const inputLoc = getEle('locSearchInput');
     
-    getEle('clearBtn').addEventListener('click', clearSearch);
+    // 主搜尋欄
+    inputMain.addEventListener('input', debounce(handleMainInput, CONFIG.DEBOUNCE_MS));
+    inputMain.addEventListener('keydown', (e) => handleKey(e, 'suggestions', handleMainInput));
+    inputMain.addEventListener('focus', () => hideSuggestions('locSuggestions')); // 焦點切換時隱藏另一邊
+    
+    // 樓層/位置搜尋欄
+    inputLoc.addEventListener('input', debounce(handleLocInput, CONFIG.DEBOUNCE_MS));
+    inputLoc.addEventListener('keydown', (e) => handleKey(e, 'locSuggestions', handleLocInput));
+    inputLoc.addEventListener('focus', () => hideSuggestions('suggestions'));
+
+    // 按鈕
+    getEle('clearBtn').addEventListener('click', () => { clearSearch(inputMain); showPlaceholder('READY TO SCAN'); });
+    getEle('clearLocBtn').addEventListener('click', () => { clearSearch(inputLoc); });
     getEle('settingBtn').addEventListener('click', toggleSettings);
     getEle('closeSettingBtn').addEventListener('click', toggleSettings);
     getEle('saveBtn').addEventListener('click', saveAliases);
 
-    // Event Delegation (消除記憶體洩漏風險)
-    sugBox.addEventListener('click', e => {
+    // Event Delegation (全域代理，消除記憶體洩漏風險與動態元素綁定問題)
+    document.addEventListener('click', e => {
+        // 點擊建議選單項目
         const item = e.target.closest('.sug-item');
         if (item && item.dataset.id) {
             selectSug(item.dataset.id);
+            return;
+        }
+        // 點擊空白處關閉選單
+        if (!e.target.closest('.search-wrap')) {
+            hideSuggestions('suggestions');
+            hideSuggestions('locSuggestions');
         }
     });
-
-    document.addEventListener('click', e => { 
-        if (!e.target.closest('.search-wrap')) hideSuggestions(); 
-    });
-
-    if (floorInput && locInput && locSugBox) {
-        floorInput.addEventListener('input', handleLocInput);
-        locInput.addEventListener('input', handleLocInput);
-        locSugBox.addEventListener('click', e => {
-            const item = e.target.closest('.sug-item');
-            if (item && item.dataset.id) {
-                selectSug(item.dataset.id);
-                hideLocSuggestions();
-            }
-        });
-        document.addEventListener('click', e => {
-            if (!e.target.closest('#locSearchCard')) hideLocSuggestions();
-        });
-    }
 }
 
 async function loadData() {
-    const input = getEle('searchInput');
-    input.disabled = true;
+    const inputMain = getEle('searchInput');
+    const inputLoc = getEle('locSearchInput');
+    inputMain.disabled = inputLoc.disabled = true;
     getEle('placeholder').innerText = '⏳ 載入資料中…';
     
     try {
@@ -372,15 +340,17 @@ async function loadData() {
         buildAliasEditor();
         getEle('placeholder').innerText = 'READY TO SCAN';
     } catch(e) {
-        console.error(e);
+        console.error('Data Load Error:', e);
         getEle('placeholder').innerText = '⚠️ 無法載入資料，請確認網路連線';
     } finally {
-        input.disabled = false;
-        input.focus();
+        inputMain.disabled = inputLoc.disabled = false;
+        inputMain.focus();
     }
 }
 
-/* ── 搜尋邏輯 ── */
+/* ── 搜尋邏輯：多維度動態判斷 ── */
+
+// 1. 處理主編號搜尋
 function buildCandidates(raw) {
     const s = raw.trim().toUpperCase();
     if (!s) return [];
@@ -391,11 +361,10 @@ function buildCandidates(raw) {
     return Array.from(set);
 }
 
-function handleInput() {
+function handleMainInput() {
     const val = getEle('searchInput').value;
     sugIdx = -1;
-    
-    if (!val.trim()) { clearSearch(); return; }
+    if (!val.trim()) { hideSuggestions('suggestions'); return; }
     
     const candidates = buildCandidates(val);
     const q = val.trim().toUpperCase();
@@ -403,9 +372,7 @@ function handleInput() {
     const sugs = [];
     
     for (const d of db) {
-        if (!d || !d.id) continue;
-        
-        if (seen.has(d.id)) continue;
+        if (!d?.id || seen.has(d.id)) continue;
         const id = d.id.toUpperCase();
         
         if (candidates.some(c => id === c) || id.includes(q)) {
@@ -415,11 +382,7 @@ function handleInput() {
         if (sugs.length >= CONFIG.MAX_SUGGESTIONS) break;
     }
     
-    if (!sugs.length) { 
-        hideSuggestions(); 
-        showPlaceholder('查無此編號'); 
-        return; 
-    }
+    if (!sugs.length) { hideSuggestions('suggestions'); showPlaceholder('查無此編號'); return; }
 
     sugs.sort((a, b) => {
         const aExact = candidates.some(c => a.id.toUpperCase() === c);
@@ -428,33 +391,76 @@ function handleInput() {
     });
 
     if (sugs.length === 1 && candidates.some(c => sugs[0].id.toUpperCase() === c)) {
-        hideSuggestions(); 
+        hideSuggestions('suggestions'); 
         renderResult(sugs[0].id); 
         return;
     }
-    
-    renderSuggestions(sugs);
+    renderSuggestions('suggestions', sugs);
 }
 
-function handleKey(e) {
-    const box = getEle('suggestions');
+// 2. 處理樓層/位置模糊搜尋 (支援多關鍵字聯集)
+function handleLocInput() {
+    const val = getEle('locSearchInput').value.trim().toUpperCase();
+    sugIdx = -1;
+    if (!val) { hideSuggestions('locSuggestions'); return; }
+    
+    // 支援空白分隔的多關鍵字 (如: "4F 右上舞台")
+    const keywords = val.split(/\s+/).filter(Boolean);
+    const seen = new Set();
+    const sugs = [];
+
+    for (const d of db) {
+        if (!d?.id || seen.has(d.id)) continue;
+
+        // 建立被搜尋字串池 (整合 ID, 樓層, 位置, 廳別)
+        // 防禦性處理：若屬性缺失則轉為空字串
+        const searchPool = `${d.id} ${d.loc || ''} ${d.hall || ''}`.toUpperCase();
+        
+        // 所有的關鍵字都必須在 searchPool 中找到 (聯集/Intersection)
+        const isMatch = keywords.every(kw => {
+            // 樓層智慧轉換：如果使用者打 "4F" 或 "4f"，自動比對 "04" (針對 AV 04-01)
+            let smartKw = kw;
+            if (/^\d[Ff]$/.test(kw)) {
+                smartKw = `0${kw.charAt(0)}`; // "4F" -> "04"
+            } else if (/^\d{2}[Ff]$/.test(kw)) {
+                smartKw = kw.slice(0, 2);     // "12F" -> "12"
+            }
+            return searchPool.includes(kw) || searchPool.includes(smartKw);
+        });
+
+        if (isMatch) {
+            seen.add(d.id);
+            sugs.push(d);
+        }
+        if (sugs.length >= CONFIG.MAX_SUGGESTIONS) break;
+    }
+
+    if (!sugs.length) { 
+        hideSuggestions('locSuggestions'); 
+        showPlaceholder('查無符合此位置的迴路盒'); 
+        return; 
+    }
+    renderSuggestions('locSuggestions', sugs, true);
+}
+
+// 共用鍵盤導覽邏輯
+function handleKey(e, boxId, triggerFn) {
+    const box = getEle(boxId);
     const items = box.querySelectorAll('.sug-item');
     
     if (box.style.display === 'none' || !items.length) {
-        if (e.key === 'Enter') handleInput();
+        if (e.key === 'Enter') triggerFn();
         return;
     }
     
     if (e.key === 'ArrowDown') { 
         sugIdx = Math.min(sugIdx + 1, items.length - 1); 
-        highlightSug(items); 
-        e.preventDefault(); 
+        highlightSug(items); e.preventDefault(); 
     } else if (e.key === 'ArrowUp') { 
         sugIdx = Math.max(sugIdx - 1, -1); 
-        highlightSug(items); 
-        e.preventDefault(); 
+        highlightSug(items); e.preventDefault(); 
     } else if (e.key === 'Enter') { 
-        sugIdx >= 0 ? items[sugIdx].click() : handleInput(); 
+        sugIdx >= 0 ? items[sugIdx].click() : triggerFn(); 
     }
 }
 
@@ -463,128 +469,23 @@ function highlightSug(items) {
     if (sugIdx >= 0) items[sugIdx].scrollIntoView({ block: 'nearest' });
 }
 
-/* ── 樓層 / 位置搜尋 ── */
-function handleLocInput() {
-    const floorVal = getEle('floorInput').value;
-    const locVal = getEle('locInput').value;
-
-    if (!floorVal.trim() && !locVal.trim()) { 
-        hideLocSuggestions(); 
-        return; 
-    }
-
-    const floorInfo = parseFloorInput(floorVal);
-    const locTokens = parseLocTokens(locVal);
-    const seen = new Set();
-    const sugs = [];
-
-    for (const d of db) {
-        if (!d || !d.id) continue;
-        if (seen.has(d.id)) continue;
-        if (!matchFloor(d, floorInfo)) continue;
-        if (!matchLoc(d, locTokens)) continue;
-        seen.add(d.id);
-        sugs.push(d);
-        if (sugs.length >= CONFIG.MAX_SUGGESTIONS) break;
-    }
-
-    if (!sugs.length) { 
-        renderLocEmpty(); 
-        return; 
-    }
-
-    sugs.sort((a, b) => a.id.localeCompare(b.id, 'zh-TW'));
-    renderLocSuggestions(sugs);
-}
-
-function parseFloorInput(raw) {
-    const s = (raw || '').trim().toUpperCase();
-    if (!s) return { tokens: [], idPrefix: null };
-
-    const m = s.match(/^(B?\d{1,2})/);
-    if (!m) return { tokens: [s], idPrefix: null };
-
-    const val = m[1];
-    const tokens = new Set([s]);
-    let idPrefix = null;
-
-    if (val.startsWith('B')) {
-        tokens.add(val);
-        tokens.add(val + 'F');
-    } else {
-        const num = parseInt(val, 10);
-        if (!isNaN(num)) {
-            tokens.add(num + 'F');
-            tokens.add(String(num).padStart(2, '0') + 'F');
-            idPrefix = String(num).padStart(2, '0');
-        }
-    }
-
-    return { tokens: [...tokens], idPrefix };
-}
-
-function parseLocTokens(raw) {
-    const s = (raw || '').trim().toUpperCase();
-    if (!s) return [];
-    return s.split(/\s+/).filter(Boolean);
-}
-
-function extractIdFloor(id) {
-    const m = String(id || '').toUpperCase().replace(/\s+/g, '').match(/^AV(\d{2})-/);
-    return m ? m[1] : null;
-}
-
-function matchFloor(d, info) {
-    if (!info || (!info.tokens.length && !info.idPrefix)) return true;
-    if (info.idPrefix && extractIdFloor(d.id) === info.idPrefix) return true;
-    const hay = `${d.loc || ''} ${d.room || ''} ${d.dest || ''}`.toUpperCase();
-    return info.tokens.some(t => t && hay.includes(t));
-}
-
-function matchLoc(d, tokens) {
-    if (!tokens.length) return true;
-    const hay = `${d.loc || ''} ${d.room || ''} ${d.hall || ''}`.toUpperCase();
-    return tokens.every(t => hay.includes(t));
-}
-
-function renderLocSuggestions(sugs) {
-    const box = getEle('locSuggestions');
-    const unique = [...new Map(sugs.map(d => [d.id, d])).values()];
-
-    box.innerHTML = unique.map(d => {
-        const hall = CONFIG.HALL_MAP[d.hall] || { short: d.hall || '?', color: '#8E8E93' };
-        return `
-            <div class="sug-item" data-id="${escHtml(d.id)}">
-                <span>${escHtml(d.id)}</span>
-                <span class="sug-hall" style="color:${hall.color}">${escHtml(hall.short)}</span>
-            </div>
-        `;
-    }).join('');
-
-    box.style.display = 'block';
-}
-
-function renderLocEmpty() {
-    const box = getEle('locSuggestions');
-    box.innerHTML = `<div class="sug-item" style="cursor:default; color:var(--sub)">查無符合條件</div>`;
-    box.style.display = 'block';
-}
-
-function hideLocSuggestions() {
-    const box = getEle('locSuggestions');
-    if (box) box.style.display = 'none';
-}
-
-function renderSuggestions(sugs) {
-    const box = getEle('suggestions');
-    const unique = [...new Map(sugs.map(d => [d.id, d])).values()];
+// 共用渲染建議清單
+function renderSuggestions(boxId, sugs, showLocationDetail = false) {
+    const box = getEle(boxId);
     
-    box.innerHTML = unique.map(d => {
+    box.innerHTML = sugs.map(d => {
         const hall = CONFIG.HALL_MAP[d.hall] || { short: d.hall || '?', color: '#8E8E93' };
+        const locHtml = showLocationDetail && d.loc 
+            ? `<span class="sug-loc">📍 ${escHtml(d.loc)}</span>` 
+            : '';
+
         return `
             <div class="sug-item" data-id="${escHtml(d.id)}">
-                <span>${escHtml(d.id)}</span>
-                <span class="sug-hall" style="color:${hall.color}">${escHtml(hall.short)}</span>
+                <div class="sug-header">
+                    <span style="font-weight:600">${escHtml(d.id)}</span>
+                    <span class="sug-hall" style="background:${hall.color}22; color:${hall.color}">${escHtml(hall.short)}</span>
+                </div>
+                ${locHtml}
             </div>
         `;
     }).join('');
@@ -592,17 +493,21 @@ function renderSuggestions(sugs) {
     box.style.display = 'block';
 }
 
-function hideSuggestions() { 
-    getEle('suggestions').style.display = 'none'; 
+function hideSuggestions(boxId) { 
+    getEle(boxId).style.display = 'none'; 
 }
 
 function selectSug(id) { 
+    // 同步更新主搜尋欄位，並清空位置搜尋欄
     getEle('searchInput').value = id; 
-    hideSuggestions(); 
+    getEle('locSearchInput').value = '';
+    
+    hideSuggestions('suggestions'); 
+    hideSuggestions('locSuggestions'); 
     renderResult(id); 
 }
 
-/* ── 核心渲染 (處理目的地聚合邏輯) ── */
+/* ── 核心渲染 (目的地聚合邏輯) ── */
 function renderResult(id) {
     if (!id) return;
     const matches = db.filter(d => d.id === id);
@@ -614,14 +519,13 @@ function renderResult(id) {
 
     const groups = new Map();
     for (const d of matches) {
-        // 動態判定，確保防禦
+        // 深度防禦：確保屬性存在，並套用 Alias
         const sys = (d.sys && (aliases[d.sys] || d.sys)) || '未命名系統';
         const conn = d.conn || '—';
-        const dest = d.dest ? d.dest.trim() : '';
-        const room = d.room ? d.room.trim() : '';
+        const dest = d.dest?.trim() || '';
+        const room = d.room?.trim() || '';
         const destInfo = [dest, room].filter(Boolean).join(' ') || '未標示目的地';
         
-        // 分組邏輯：系統、接頭、目的地需一併作為分組條件，確保數量累加正確
         const key = `${sys}§${conn}§${destInfo}`;
         
         if (!groups.has(key)) {
@@ -651,7 +555,7 @@ function renderResult(id) {
     getEle('resultArea').innerHTML = `
         <div class="card">
             <div class="tag">SYSTEM SCAN OK</div>
-            <div class="id-label">${escHtml(first.id)}</div>
+            <div class="id-label" title="${escHtml(first.id)}">${escHtml(first.id)}</div>
             <hr class="divider">
             <div class="info-grid">
                 <div class="info-item">
@@ -693,19 +597,18 @@ function showPlaceholder(msg) {
     el.innerText = msg;
 }
 
-function clearSearch() {
-    getEle('searchInput').value = '';
-    currentId = null;
-    hideSuggestions(); 
-    showPlaceholder('READY TO SCAN');
+function clearSearch(inputEle) {
+    inputEle.value = '';
+    hideSuggestions('suggestions'); 
+    hideSuggestions('locSuggestions');
 }
 
 /* ── 設定與 Alias ── */
 function buildAliasEditor() {
-    const systems = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
+    const systems = [...new Set(db.map(d => d?.sys).filter(Boolean))].sort();
     getEle('aliasList').innerHTML = systems.map(s => `
         <div class="alias-row">
-            <span class="alias-orig">${escHtml(s)}</span>
+            <span class="alias-orig" title="${escHtml(s)}">${escHtml(s)}</span>
             <input class="alias-input" data-orig="${escHtml(s)}" value="${escHtml(aliases[s] || '')}" placeholder="自訂名稱">
         </div>`).join('');
 }
@@ -737,7 +640,10 @@ function toggleSettings() {
     const el = getEle('settingsArea');
     const isHidden = el.style.display === 'none';
     el.style.display = isHidden ? 'block' : 'none';
-    if (isHidden) hideSuggestions();
+    if (isHidden) {
+        hideSuggestions('suggestions');
+        hideSuggestions('locSuggestions');
+    }
 }
 </script>
 </body>
