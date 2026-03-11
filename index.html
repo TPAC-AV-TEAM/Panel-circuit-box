@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V6.2 Pro</title>
+    <title>AV 迴路盒查詢 | V6.4 Pro (Data Cleansing)</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -24,26 +24,21 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: var(--bg);
-            color: var(--text);
+            background: var(--bg); color: var(--text);
             font-family: "SF Pro Display", "Inter", "-apple-system", sans-serif;
-            min-height: 100vh;
-            padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+            min-height: 100vh; padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
             display: flex; flex-direction: column; align-items: center;
         }
 
         /* ── Header ── */
         .header {
-            width: 100%; padding: 52px 16px 16px;
-            background: rgba(0,0,0,0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            border-bottom: 0.5px solid var(--border);
-            position: sticky; top: 0; z-index: 100; text-align: center;
+            width: 100%; padding: 52px 16px 16px; background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-bottom: 0.5px solid var(--border); position: sticky; top: 0; z-index: 100; text-align: center;
         }
         .header h1 {
-            font-size: 26px; font-weight: 700;
-            background: linear-gradient(180deg,#fff 0%,#8E8E93 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 16px;
+            font-size: 26px; font-weight: 700; background: linear-gradient(180deg,#fff 0%,#8E8E93 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 16px;
         }
 
         /* ── Search Group ── */
@@ -66,65 +61,33 @@
             display: flex; align-items: center; justify-content: center; flex-shrink: 0;
             transition: background 0.15s, transform 0.1s;
         }
-        
-        @media (hover: hover) {
-            .icon-btn:hover { border-color: var(--sub); color: #fff; }
-            .sug-item:hover { background: rgba(255,255,255,0.08); }
-            .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); }
-        }
+        @media (hover: hover) { .icon-btn:hover { border-color: var(--sub); color: #fff; } .sug-item:hover { background: rgba(255,255,255,0.08); } .id-chip:hover { background: rgba(10, 132, 255, 0.2); border-color: var(--blue); } }
         .icon-btn:active { background: rgba(255,255,255,0.15); transform: scale(0.96); }
 
-        /* ── Advanced Faceted Filters ── */
-        .filter-panel {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            border-radius: 14px; padding: 12px; width: 100%;
-        }
-        .filter-header {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 11px; color: var(--sub); font-weight: 700; letter-spacing: 0.1em; 
-            margin-bottom: 10px; padding: 0 4px;
-        }
+        /* ── Filters & Chips ── */
+        .filter-panel { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 14px; padding: 12px; width: 100%; }
+        .filter-header { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--sub); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 10px; padding: 0 4px; }
         .clear-filter-btn { color: var(--blue); background: none; border: none; font-size: 11px; font-weight: 600; cursor: pointer; }
         .filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-        
         select.filter-select {
             width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
             border-radius: 10px; padding: 10px 8px; color: #fff; font-size: 14px; outline: none;
             appearance: none; -webkit-appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E8E93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat; background-position: right 8px center; background-size: 14px;
-            text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
-            transition: border-color 0.2s;
+            text-overflow: ellipsis; white-space: nowrap; overflow: hidden; transition: border-color 0.2s;
         }
         select.filter-select:focus { border-color: var(--blue); }
-
-        /* ── ID Chips Wall ── */
-        .id-chips-container {
-            margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--sep);
-            display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto;
-        }
+        .id-chips-container { margin-top: 12px; padding-top: 12px; border-top: 0.5px solid var(--sep); display: flex; flex-wrap: wrap; gap: 8px; max-height: 150px; overflow-y: auto; }
         .id-chips-container:empty { display: none; }
-        .id-chip {
-            background: rgba(255,255,255,0.08); border: 1px solid var(--border);
-            border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 600;
-            color: var(--text); cursor: pointer; transition: all 0.2s;
-            animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.95);
-        }
+        .id-chip { background: rgba(255,255,255,0.08); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.2s; animation: fadeInScale 0.2s ease-out forwards; opacity: 0; transform: scale(0.95); }
         .id-chip:active { transform: scale(0.9); background: var(--blue); color: #fff; }
         @keyframes fadeInScale { to { opacity: 1; transform: scale(1); } }
         .chip-empty-msg { width: 100%; text-align: center; font-size: 12px; color: var(--sub); padding: 8px 0; }
 
         /* ── Suggestions ── */
-        .suggestions {
-            position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-            background: rgba(28,28,30,0.99); border: 0.5px solid var(--border);
-            border-radius: 14px; overflow-y: auto; max-height: 40vh;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.6); z-index: 200; display: none;
-        }
-        .sug-item {
-            padding: 12px 16px; cursor: pointer; font-size: 15px; border-bottom: 0.5px solid var(--sep);
-            display: flex; flex-direction: column; gap: 4px;
-        }
+        .suggestions { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: rgba(28,28,30,0.99); border: 0.5px solid var(--border); border-radius: 14px; overflow-y: auto; max-height: 40vh; box-shadow: 0 8px 30px rgba(0,0,0,0.6); z-index: 200; display: none; }
+        .sug-item { padding: 12px 16px; cursor: pointer; font-size: 15px; border-bottom: 0.5px solid var(--sep); display: flex; flex-direction: column; gap: 4px; }
         .sug-header { display: flex; justify-content: space-between; align-items: center; }
         .sug-hall { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; }
 
@@ -132,7 +95,6 @@
         .content { width: 100%; max-width: 540px; padding: 16px 16px 0; }
         .card { background: var(--card); border: 0.5px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 12px; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
         .tag { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: var(--blue); margin-bottom: 6px; }
         .id-label { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .divider { border: none; border-top: 0.5px solid var(--sep); margin: 14px 0; }
@@ -157,7 +119,7 @@
 
         /* ── Settings ── */
         .settings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .save-btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .save-btn { background: var(--blue); color: #fff; border: none; border-radius: 8px; padding: 6px 16px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .close-settings { background: rgba(255,255,255,0.1); color: #fff; border: none; border-radius: 8px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .alias-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); }
         .alias-orig { font-size: 13px; color: var(--text); flex: 1; word-break: break-all; min-width: 0; }
@@ -215,22 +177,12 @@ const CONFIG = {
     DATA_URL: './data.json',
     STORAGE_KEY: 'avAliases',
     MAX_SUGGESTIONS: 15,
-    HALL_ORDER: [
-        '大劇院',
-        '多形式中劇院',
-        '鏡框式中劇院',
-        '偶劇院',
-        '排練室',
-        '屋頂劇場',
-        '公共區域',
-        '卸貨口與外部空間',
-    ],
     HALL_MAP: {
         '大劇院':       { name: 'GT 大劇院',   short: 'GT', color: '#FF3B30' },
         '多形式中劇院': { name: 'BB 藍盒子',   short: 'BB', color: '#5AC8FA' },
         '鏡框式中劇院': { name: 'GP 球劇場',   short: 'GP', color: '#34C759' },
-        '偶劇院':       { name: '偶劇院',   short: 'PT', color: '#FF9F0A' },
-        '屋頂劇場':     { name: '屋頂劇場', short: 'RT', color: '#BF5AF2' },
+        '偶劇院':       { name: 'PT 偶劇院',   short: 'PT', color: '#FF9F0A' },
+        '屋頂劇場':     { name: 'RT 屋頂劇場', short: 'RT', color: '#BF5AF2' },
         '排練室':       { name: '排練室',     short: '練', color: '#64D2FF' },
         '公共區域':     { name: '公共區域',   short: '公共', color: '#8E8E93' },
         '卸貨口與外部空間': { name: '外部空間', short: '外部', color: '#636366' },
@@ -242,6 +194,7 @@ let uniqueBoxes = [];
 let aliases = {};
 let currentId = null;
 
+// [防禦] 讀取時防呆
 const safeParse = (str, fb) => { try { return JSON.parse(str) || fb; } catch(e) { return fb; } };
 const escHtml = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const getEle = id => document.getElementById(id);
@@ -260,7 +213,6 @@ function bindEvents() {
     getEle('closeSettingBtn').addEventListener('click', () => getEle('settingsArea').style.display = 'none');
     getEle('saveBtn').addEventListener('click', saveAliases);
 
-    // 傳入 e (Event) 以便追蹤是哪個欄位觸發了變更
     ['selHall', 'selFloor', 'selLoc'].forEach(id => {
         getEle(id).addEventListener('change', updateFilters);
     });
@@ -282,17 +234,37 @@ async function loadData() {
         const rawDb = await res.json();
         
         db = rawDb.map(d => {
+            // 【修復 1】ID 正規化：強制將 "AV01-02" 或 "av 01-02" 轉為標準 "AV 01-02"
+            let rawId = (d.id || '').trim().toUpperCase();
+            let stdId = rawId.replace(/^AV\s*/, 'AV ');
+
             let floor = '';
             let exactLoc = (d.loc || '').trim();
-            const floorMatch = exactLoc.match(/\b(B?\d{1,2}F)\b/i);
+            
+            const floorMatch = exactLoc.match(/(?:^|[^a-zA-Z0-9])([B]?\d{1,2}[M]?F|RF)(?![a-zA-Z0-9])/i);
+            
             if (floorMatch) {
                 floor = floorMatch[1].toUpperCase();
-                exactLoc = exactLoc.replace(floorMatch[0], '').trim(); 
+                exactLoc = exactLoc.replace(floorMatch[1], '').replace(/^[-\s]+/, '').trim(); 
             } else {
-                const idMatch = (d.id || '').match(/^AV\s*(\d{2})/i);
-                if (idMatch) floor = parseInt(idMatch[1], 10) + 'F';
+                // 從標準化的 ID 提取
+                const idMatch = stdId.match(/^AV\s*(\d{2}[a-zA-Z]?)/);
+                if (idMatch) {
+                    floor = idMatch[1].toUpperCase() + 'F';
+                }
             }
-            return { ...d, _floor: floor || '未知樓層', _exactLoc: exactLoc || '一般區域' };
+
+            // 【修復 2】樓層格式統一：消滅前導零 (01F -> 1F, B02F -> B2F)
+            if (floor) {
+                floor = floor.replace(/^(B?)0+(\d+.*)/, '$1$2');
+            }
+
+            return { 
+                ...d, 
+                id: stdId, // 覆蓋為正規化後的 ID
+                _floor: floor || '未知樓層', 
+                _exactLoc: exactLoc || '一般區域' 
+            };
         });
 
         const seenIds = new Set();
@@ -316,19 +288,7 @@ function updateDropdownOptions(selectId, dataArray) {
     const sel = getEle(selectId);
     const currentVal = sel.value;
     const defaultText = sel.options[0].text; 
-    const uniqueVals = [...new Set(dataArray.filter(Boolean))];
-
-    if (selectId === 'selHall') {
-        uniqueVals.sort((a, b) => {
-            const ia = CONFIG.HALL_ORDER.indexOf(a);
-            const ib = CONFIG.HALL_ORDER.indexOf(b);
-            const ra = ia === -1 ? Number.MAX_SAFE_INTEGER : ia;
-            const rb = ib === -1 ? Number.MAX_SAFE_INTEGER : ib;
-            return ra === rb ? a.localeCompare(b, 'zh-TW') : ra - rb;
-        });
-    } else {
-        uniqueVals.sort();
-    }
+    const uniqueVals = [...new Set(dataArray.filter(Boolean))].sort();
     
     sel.innerHTML = `<option value="">${defaultText}</option>` + 
         uniqueVals.map(v => {
@@ -346,7 +306,6 @@ function updateFilters(e) {
     
     const triggerId = e ? e.target.id : null;
 
-    // 【狀態衝突自癒機制】檢查其他未動過的欄位是否依然合法，不合法則自動清空
     if (triggerId === 'selHall') {
         const validF = uniqueBoxes.filter(d => d.hall === h).map(d => d._floor);
         if (f && !validF.includes(f)) { f = ''; getEle('selFloor').value = ''; }
@@ -371,7 +330,6 @@ function updateFilters(e) {
 
     getEle('suggestions').style.display = 'none';
 
-    // 以修復後的乾淨狀態，重新篩選資料庫
     let filteredBoxes = uniqueBoxes.filter(d => {
         if (h && d.hall !== h) return false;
         if (f && d._floor !== f) return false;
@@ -379,12 +337,10 @@ function updateFilters(e) {
         return true;
     });
 
-    // 動態收斂另外兩個下拉選單的選項
     if (!h) updateDropdownOptions('selHall', filteredBoxes.map(d => d.hall));
     if (!f) updateDropdownOptions('selFloor', filteredBoxes.map(d => d._floor));
     if (!l) updateDropdownOptions('selLoc', filteredBoxes.map(d => d._exactLoc));
 
-    // 渲染按鈕牆
     const chipBox = getEle('filterIdChips');
     if (filteredBoxes.length === 0) {
         chipBox.innerHTML = '<div class="chip-empty-msg">⚠️ 無符合條件的迴路盒</div>';
@@ -411,10 +367,13 @@ function triggerSearch(id) {
 }
 
 function handleMainInput() {
-    const val = getEle('searchInput').value.trim().toUpperCase();
+    // 搜尋時也同步支援將 AV01 自動正規化為 AV 01 進行比對
+    let val = getEle('searchInput').value.trim().toUpperCase();
+    val = val.replace(/^AV\s*/, 'AV ');
+
     if (!val) return getEle('suggestions').style.display = 'none';
     
-    const sugs = uniqueBoxes.filter(d => d.id.toUpperCase().includes(val)).slice(0, CONFIG.MAX_SUGGESTIONS);
+    const sugs = uniqueBoxes.filter(d => d.id.includes(val)).slice(0, CONFIG.MAX_SUGGESTIONS);
     if(!sugs.length) { getEle('suggestions').style.display = 'none'; return; }
     
     getEle('suggestions').innerHTML = sugs.map(d => {
@@ -470,10 +429,32 @@ function buildAliasEditor() {
     const sysNames = [...new Set(db.map(d => d.sys).filter(Boolean))].sort();
     getEle('aliasList').innerHTML = sysNames.map(s => `<div class="alias-row"><span class="alias-orig">${escHtml(s)}</span><input class="alias-input" data-orig="${escHtml(s)}" value="${escHtml(aliases[s]||'')}" placeholder="自訂"></div>`).join('');
 }
+
 function saveAliases() {
-    document.querySelectorAll('.alias-input').forEach(el => { const v = el.value.trim(); const orig = el.dataset.orig; if(v) aliases[orig] = v; else delete aliases[orig]; });
-    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(aliases));
-    if(currentId) renderResult(currentId); getEle('settingsArea').style.display = 'none';
+    const btn = getEle('saveBtn');
+    document.querySelectorAll('.alias-input').forEach(el => { 
+        const v = el.value.trim(); 
+        const orig = el.dataset.orig; 
+        if(v) aliases[orig] = v; else delete aliases[orig]; 
+    });
+    
+    // 【修復 3】儲存錯誤處理：防禦 LocalStorage 爆掉或無痕模式禁用
+    try {
+        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(aliases));
+        btn.innerText = '✅ 已儲存'; 
+        btn.style.background = 'var(--green)';
+        
+        setTimeout(() => { 
+            btn.innerText = '儲存'; 
+            btn.style.background = 'var(--blue)';
+            getEle('settingsArea').style.display = 'none'; 
+        }, 800);
+        
+        if(currentId) renderResult(currentId); 
+    } catch(e) {
+        console.warn('Storage Error:', e);
+        alert('儲存失敗：請確認是否開啟了無痕模式，或裝置儲存空間已滿。');
+    }
 }
 </script>
 </body>
