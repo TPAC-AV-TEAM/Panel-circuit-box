@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AV 迴路盒查詢 | V11.4 Pure</title>
+    <title>AV 迴路盒查詢 | V11.5 Pure</title>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -45,7 +45,7 @@
         .search-group { display: flex; flex-direction: column; gap: 12px; max-width: 540px; margin: 0 auto; }
         .search-row { display: flex; gap: 8px; align-items: center; width: 100%; }
         .search-wrap { position: relative; flex: 1; }
-        /* 【精簡】移除外層 form 標籤 */
+        
         .search-wrap input {
             width: 100%; background: var(--input-bg); border: 1.5px solid transparent;
             border-radius: 16px; padding: 16px 18px; color: var(--text-main); font-size: 16px;
@@ -111,12 +111,12 @@
         table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         thead th { text-align: left; font-size: 13px; color: var(--text-sub); font-weight: 600; padding: 0 4px 10px; border-bottom: 1px solid var(--border); }
         thead th:nth-child(1) { width: 55%; }
-        thead th:nth-child(2) { width: 30%; }
-        thead th:nth-child(3) { width: 15%; text-align: right; }
+        thead th:nth-child(2) { width: 25%; }
+        thead th:nth-child(3) { width: 20%; text-align: right; }
         tbody tr.data-row { border-bottom: 1px solid var(--sep); }
         tbody td { padding: 14px 4px; font-size: 16px; font-weight: 500; vertical-align: top; word-wrap: break-word; }
         tbody td:nth-child(2) { color: var(--text-sub); font-size: 14.5px; font-weight: 400; }
-        tbody td:last-child { text-align: right; font-size: 18px; font-weight: 600; }
+        tbody td:last-child { text-align: right; }
         .sys-name { font-weight: 600; line-height: 1.4; transition: color 0.2s; }
         .dest-info { font-size: 13px; color: var(--text-mute); margin-top: 6px; line-height: 1.4; display: flex; gap: 6px; }
         .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; opacity: 0.6; }
@@ -143,7 +143,7 @@
 
 <div class="header">
     <h1>音視訊迴路盒</h1>
-    <div class="version-label">V11.4 PURE</div>
+    <div class="version-label">V11.5 PURE</div>
     <div class="search-group">
         <div class="search-row">
             <div class="search-wrap">
@@ -245,7 +245,6 @@ function getSysCategory(sysName) {
     return { type: 'OTHER', color: '#8E8E93', order: 99 };
 }
 
-/* 【精簡】移除重複的 ID 轉換邏輯 */
 function normalizeId(raw) {
     let v = raw.trim().toUpperCase();
     if (!v) return v;
@@ -455,12 +454,24 @@ function renderResult(id) {
     const locs = [...new Set(matches.map(d => d.loc?.trim()).filter(Boolean))].join(' / ') || '—';
 
     const groups = new Map();
+    let totalConn = 0;
+    let totalCirc = 0;
+    
     matches.forEach(d => {
         const sys = (d.sys && (aliases[d.sys] || d.sys)) || '未命名系統';
         const dest = [d.dest?.trim(), d.room?.trim()].filter(Boolean).join(' ') || '未標示目的地';
         const key = `${sys}§${d.conn||'—'}§${dest}`;
-        if (!groups.has(key)) groups.set(key, { sys, conn: d.conn||'—', dest, qty: 0 });
-        groups.get(key).qty += parseInt(d.qty, 10) || 0;
+        
+        if (!groups.has(key)) {
+            groups.set(key, { sys, conn: d.conn||'—', dest, conn_qty: 0, circuit_qty: 0 });
+        }
+        
+        const g = groups.get(key);
+        g.conn_qty += parseInt(d.conn_qty, 10) || 0;
+        g.circuit_qty += parseInt(d.circuit_qty, 10) || 0;
+        
+        totalConn += parseInt(d.conn_qty, 10) || 0;
+        totalCirc += parseInt(d.circuit_qty, 10) || 0;
     });
 
     const sortedGroups = [...groups.values()].sort((a,b) => {
@@ -484,7 +495,10 @@ function renderResult(id) {
                 <div class="dest-info"><span class="dest-icon" style="color:${cat.color}">↳</span><span>${escHtml(g.dest)}</span></div>
             </td>
             <td>${escHtml(g.conn)}</td>
-            <td>${g.qty||'0'}</td>
+            <td style="text-align:right;">
+                <div style="font-size:18px;font-weight:600;">${g.conn_qty}</div>
+                <div style="font-size:12px;color:var(--text-mute);">迴路: ${g.circuit_qty}</div>
+            </td>
         </tr>`;
         lastSysType = cat.type;
     });
@@ -493,6 +507,18 @@ function renderResult(id) {
         <div class="card">
             <div class="tag">SYSTEM SCAN OK</div>
             <div class="id-label">${escHtml(first.id)}</div>
+            
+            <div style="display:flex; gap:12px; margin-top:16px;">
+                <div style="flex:1; background:rgba(255,255,255,0.06); padding:12px 16px; border-radius:12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:12px; color:var(--text-sub); margin-bottom:4px;">實體接頭總數</div>
+                    <div style="font-size:24px; font-weight:700; color:#32D74B;">${totalConn} <span style="font-size:14px; color:var(--text-mute); font-weight:500;">個</span></div>
+                </div>
+                <div style="flex:1; background:rgba(255,255,255,0.06); padding:12px 16px; border-radius:12px; border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="font-size:12px; color:var(--text-sub); margin-bottom:4px;">系統迴路總數</div>
+                    <div style="font-size:24px; font-weight:700; color:var(--blue);">${totalCirc} <span style="font-size:14px; color:var(--text-mute); font-weight:500;">路</span></div>
+                </div>
+            </div>
+            
             <hr class="divider">
             <div class="info-grid">
                 <div class="info-item">
@@ -511,7 +537,7 @@ function renderResult(id) {
         <div class="card">
             <p class="section-title">接口清單 / INTERFACE LIST</p>
             <table>
-                <thead><tr><th>系統 / 目的地</th><th>接頭</th><th>數量</th></tr></thead>
+                <thead><tr><th>系統 / 目的地</th><th>接頭</th><th>接頭數</th></tr></thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
         </div>`;
