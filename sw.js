@@ -1,8 +1,8 @@
-// AV 迴路盒查詢 — Service Worker V13
+// AV 迴路盒查詢 — Service Worker V14
 // 路徑改由 registration.scope 取得，換 Repo 名稱 / 自訂網域 / localhost 都能運作
-const CACHE_NAME = 'av-panel-v13';
+const CACHE_NAME = 'av-panel-v14';
 const BASE = self.registration.scope;               // 結尾已含 "/"
-const PRECACHE = ['', 'index.html', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const PRECACHE = ['', 'index.html', 'tests.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', event => {
     event.waitUntil(

@@ -138,6 +138,20 @@
         tbody td:last-child { text-align: right; font-size: 18px; font-weight: 700; }
         .sys-name { font-weight: 600; line-height: 1.4; }
         .dest-info { font-size: 12px; color: var(--text-mute); margin-top: 5px; line-height: 1.4; display: flex; gap: 4px; }
+        .test-sum { margin-top:8px; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+        .ts-head { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; font-weight:700; }
+        .ts-head .arrow { opacity:.6; transition:transform .2s; font-size:12px; }
+        .test-sum.open .arrow { transform:rotate(180deg); }
+        .ts-sub { font-size:11px; font-weight:500; color:var(--text-sub); margin-top:2px; line-height:1.4; }
+        .test-none { margin-top:7px; font-size:12px; color:var(--text-sub); opacity:.7; }
+        .test-detail { display:none; margin-top:6px; border-top:1px dashed var(--sep); }
+        .test-detail.open { display:block; }
+        .test-line { font-size:12px; padding:6px 0; border-bottom:1px solid var(--sep); line-height:1.45; }
+        .test-line:last-child { border-bottom:none; }
+        .test-line .tl1 { display:flex; white-space:nowrap; gap:8px; align-items:baseline; font-weight:700; }
+        .test-line .tl1 small { margin-left:auto; font-size:11px; font-weight:400; color:var(--text-sub); }
+        .test-line .tm { color:var(--text-sub); font-weight:400; font-size:11px; }
+        .test-note { margin-top:10px; font-size:11px; color:var(--text-sub); line-height:1.5; }
         .dest-icon { color: var(--blue); flex-shrink: 0; font-weight: bold; opacity: 0.6; }
         .rack-info { font-size: 12px; line-height: 1.5; word-break: break-all; }
         .dev-info { font-size: 11px; color: var(--text-mute); margin-top: 3px; }
@@ -193,6 +207,7 @@
     <div id="placeholderContainer"></div>
 </div>
 
+<script src="tests.js"></script>
 <script>
 const CONFIG = {
     STORAGE_KEY: 'avAliases',
@@ -279,6 +294,56 @@ function normalizeId(raw) {
     return v;
 }
 
+// ===== 測試資料（tests.js：Fluke LinkWare Cat6 Channel）=====
+const TEST_OK = '#32D74B', TEST_WARN = '#FF9F0A', TEST_BAD = '#FF453A', TEST_WARN_DB = 3;
+const TEST_IDX = (() => {
+    const m = {};
+    if (typeof TEST_DB === 'undefined') return m;
+    for (const k in TEST_DB) m[k.trim().toUpperCase().replace(/^AV\s*/, 'AV ')] = TEST_DB[k];
+    return m;
+})();
+const HAS_TESTS = Object.keys(TEST_IDX).length > 0;
+const fmtN = (v, d = 1) => (v === null || v === undefined) ? '—' : Number(v).toFixed(d);
+function testReason(t) {
+    if (t.ok) return '';
+    const r = [];
+    if (t.len > 100) r.push('長度超限（>100 m）');
+    if (t.hr === null) r.push('餘量無效');
+    else if (t.hr < 0) r.push('NEXT 負餘量');
+    return r.join('、') || '其他（請查 LinkWare 報表）';
+}
+function testSummaryHtml(T) {
+    const n = T.length, pass = T.filter(t => t.ok).length, fail = n - pass;
+    const hrs = T.map(t => t.hr).filter(v => v !== null && v !== undefined);
+    const minHr = hrs.length ? Math.min(...hrs) : null;
+    const maxLen = Math.max(...T.map(t => t.len));
+    const color = fail ? TEST_BAD : (minHr !== null && minHr < TEST_WARN_DB ? TEST_WARN : TEST_OK);
+    const head = fail ? `✗ ${fail}/${n} 失敗` : `✓ ${pass}/${n} 通過`;
+    const lines = T.map(t => {
+        const c = t.ok ? ((t.hr !== null && t.hr < TEST_WARN_DB) ? TEST_WARN : TEST_OK) : TEST_BAD;
+        const why = testReason(t);
+        return `<div class="test-line">
+            <div class="tl1"><span>${escHtml(t.n)}</span><span style="color:${c}">${t.ok ? '通過' : '失敗'}</span><small>${escHtml(t.d.slice(5, 16))}</small></div>
+            <div class="tm">長度 ${fmtN(t.len)} m · 餘量(NEXT) ${t.hr === null ? '無效' : fmtN(t.hr) + ' dB'}</div>
+            ${why ? `<div class="tm" style="color:${TEST_BAD}">原因：${escHtml(why)}</div>` : ''}
+        </div>`;
+    }).join('');
+    return `<div class="test-sum" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('open')">
+            <div class="ts-head" style="color:${color}"><span>${head}</span><span class="arrow">▾</span></div>
+            <div class="ts-sub">最長 ${fmtN(maxLen)} m · 最小餘量 ${minHr === null ? '無效' : fmtN(minHr) + ' dB'}</div>
+        </div><div class="test-detail">${lines}</div>`;
+}
+// 搜尋用關鍵字：失敗 / 通過 / 未測試
+function testKeywords(id) {
+    if (!HAS_TESTS) return '';
+    const rows = db.filter(d => d.id === id && /RJ-?45/i.test(d.sys || '') && d.conn === 'NE8FDY-C6');
+    if (!rows.length) return '';
+    const e = TEST_IDX[id] || {};
+    let any = false, bad = false;
+    rows.forEach(d => { const T = e[d.sys]; if (T && T.length) { any = true; if (T.some(t => !t.ok)) bad = true; } });
+    return ' ' + (!any ? '未測試' : (bad ? '失敗 測試失敗' : '通過 測試通過'));
+}
+
 function buildSearchIndex() {
     const map = new Map();
     db.forEach(d => {
@@ -293,6 +358,7 @@ function buildSearchIndex() {
         ].join(' '));
         map.set(d.id, (map.get(d.id) || '') + norm);
     });
+    map.forEach((v, id) => map.set(id, v + normStr(testKeywords(id))));
     idSearchIndex = map;
 }
 
@@ -489,9 +555,10 @@ function renderResult(id) {
         const dest = [d.dest?.trim(), d.room?.trim()].filter(Boolean).join(' ') || '未標示目的地';
         const key = `${sys}§${d.conn||'—'}§${dest}`;
         if (!groups.has(key)) {
-            groups.set(key, { sys, conn: d.conn||'—', dest, qty: 0, rack: d.rack||'', dev: d.dev||'' });
+            groups.set(key, { sys, rawSys: d.sys, conn: d.conn||'—', dest, floors: [], qty: 0, rack: d.rack||'', dev: d.dev||'' });
         }
         const q = parseInt(d.qty, 10) || 0;
+        if (d.dest) groups.get(key).floors.push(d.dest.trim().toUpperCase());
         groups.get(key).qty += q;
         totalQty += q;
     });
@@ -503,6 +570,18 @@ function renderResult(id) {
         return a.sys.localeCompare(b.sys, 'zh-TW');
     });
 
+    // 測試資料：每條線只掛在第一個符合的群組（同編號多列時避免重複顯示）
+    const testEntry = TEST_IDX[id] || {};
+    const usedTests = new Set();
+    let anyTest = false;
+    const testHtmlFor = g => {
+        if (!HAS_TESTS || !/RJ-?45/i.test(g.rawSys || '') || g.conn !== 'NE8FDY-C6') return '';
+        const T = (testEntry[g.rawSys] || []).filter(t => !usedTests.has(t) && (!t.f || g.floors.includes(t.f)));
+        if (!T.length) return '<div class="test-none">未測試</div>';
+        T.forEach(t => usedTests.add(t));
+        anyTest = true;
+        return testSummaryHtml(T);
+    };
     let lastSysType = null;
     let rowsHtml = '';
     sortedGroups.forEach(g => {
@@ -517,6 +596,7 @@ function renderResult(id) {
             <td style="border-left:3px solid ${cat.color};padding-left:10px;border-radius:2px 0 0 2px;">
                 <div class="sys-name" style="color:${cat.color}">${escHtml(g.sys)}</div>
                 <div class="dest-info"><span class="dest-icon" style="color:${cat.color}">↳</span><span>${escHtml(g.dest)}</span></div>
+                ${testHtmlFor(g)}
             </td>
             <td>${rackHtml}</td>
             <td>${escHtml(g.conn)}</td>
@@ -565,6 +645,7 @@ function renderResult(id) {
                 </tr></thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
+            ${anyTest ? `<div class="test-note">網路孔測試：Fluke LinkWare，TIA Cat 6 Channel，測試資料日期 ${TEST_DATE}。點選結果可展開逐條明細。餘量 (NEXT) 為近端串音餘量，≥ 0 dB 合格，< ${TEST_WARN_DB} dB 以橘色提醒；長度超過 100 m 亦判失敗。</div>` : ''}
         </div>`;
     getEle('resultArea').style.display = 'block';
     getEle('placeholderContainer').style.display = 'none';
