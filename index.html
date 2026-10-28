@@ -387,7 +387,14 @@ function triggerSearch(id) {
 function bindEvents() {
     const input = getEle('searchInput');
 
+    // 輸入防抖：停止打字 120ms 後才計算建議（清空輸入與按 Enter 會立即取消待執行的建議）
+    let sugTimer = null;
     input.addEventListener('input', () => {
+        clearTimeout(sugTimer);
+        if (!input.value.trim()) { getEle('suggestions').style.display = 'none'; return; }
+        sugTimer = setTimeout(showSuggestions, 120);
+    });
+    function showSuggestions() {
         const raw = input.value;
         if (!raw.trim()) { getEle('suggestions').style.display = 'none'; return; }
         let sugs = fuzzyMatchIds(raw);
@@ -413,11 +420,12 @@ function bindEvents() {
             </div>`;
         }).join('');
         getEle('suggestions').style.display = 'block';
-    });
+    }
 
     input.addEventListener('keydown', e => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
+        clearTimeout(sugTimer);
         input.blur();
         const raw = input.value.trim();
         if (!raw) return;
