@@ -1,13 +1,10 @@
-// AV 迴路盒查詢 — Service Worker V14
-// 路徑改由 registration.scope 取得，換 Repo 名稱 / 自訂網域 / localhost 都能運作
 const CACHE_NAME = 'av-panel-v14';
-const BASE = self.registration.scope;               // 結尾已含 "/"
-const PRECACHE = ['', 'index.html', 'tests.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
+const BASE = self.registration.scope;
+const PRECACHE = ['', 'index.html', 'style.css', 'tests.js', 'db.js', 'app.js', 'manifest.json', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache =>
-            // 逐一快取：任何一個檔案不存在，不會讓其他檔案一起失敗
             Promise.allSettled(PRECACHE.map(p => cache.add(BASE + p)))
         )
     );
@@ -24,7 +21,7 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
-    if (new URL(event.request.url).origin !== self.location.origin) return;   // 外部資源（字型）交給瀏覽器
+    if (new URL(event.request.url).origin !== self.location.origin) return;
 
     event.respondWith(
         fetch(event.request)
@@ -35,9 +32,14 @@ self.addEventListener('fetch', event => {
                 }
                 return response;
             })
-            .catch(() =>
-                caches.match(event.request, { ignoreSearch: true })
-                    .then(cached => cached || caches.match(BASE + 'index.html'))
-            )
+            .catch(() => caches.match(event.request, { ignoreSearch: true }))
+            .then(cached => {
+                // 如果快取有資料就回傳，否則判斷是否為導航請求(切換頁面)，才回退 index.html
+                if (cached) return cached;
+                if (event.request.mode === 'navigate') {
+                    return caches.match(BASE + 'index.html');
+                }
+                return Response.error();
+            })
     );
 });
