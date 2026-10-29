@@ -238,8 +238,8 @@ const HALL_TOKENS = new Map([
 const FLOOR_RE = /^(B\d{1,2}F?|RF|\d{1,2}F|\d{1,2}MF)$/;
 
 const DEFAULT_ALIASES = {
-    'POWER 1.8 kW 1-PHASE': 'POWER 雙插座',
-    'POWER 22 kW 3-PHASE':  'POWER 32A 3P+N+PE',
+    'POWER 1.8 kW 1-PHASE': 'POWER H插座',
+    'POWER 22 kW 3-PHASE':  'POWER 32A',
     'POWER 3.6 kW 1-PHASE': 'POWER Twist Lock',
     '對講系統-RJ-45':    '對講-RJ45',
     '對講系統-XLR-3':    '對講-XLR-3',
@@ -442,6 +442,7 @@ function bindEvents() {
     });
 
     getEle('clearBtn').addEventListener('click', () => {
+        clearTimeout(sugTimer);
         input.value = '';
         getEle('suggestions').style.display = 'none';
         showPlaceholder();
